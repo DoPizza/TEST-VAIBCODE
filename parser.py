@@ -887,6 +887,7 @@ def main():
                 f"НОВОЕ: "
                 f"{event['start_date']} | "
                 f"{event['title']} | "
+                f"{event['18+']} | "
                 f"{source_id}"
             )
 
