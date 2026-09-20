@@ -504,15 +504,34 @@ def find_event_blocks(soup):
                 # Чем меньше контейнер, тем лучше.
                 text_len = len(current.get_text(" ", strip=True))
 
-                # Дополнительная проверка: внутри контейнера
-                # должна быть только одна ссылка на билет.
-                ticket_count = 0
-                for a in current.find_all("a", href=True):
-                    href = a.get("href", "")
-                    if "ticketsteam-" in href or "afisha.yandex.ru" in href:
-                        ticket_count += 1
+                # ВАЖНО:
+                # На Tilda одно мероприятие содержит НЕ одну ссылку,
+                # а несколько ссылок с ОДНИМ И ТЕМ ЖЕ href:
+                # дата, время, цена, название и "КУПИТЬ БИЛЕТ".
+                #
+                # Поэтому нельзя считать количество <a>.
+                # Нужно считать количество УНИКАЛЬНЫХ source_id.
+                event_source_ids = set()
 
-                if ticket_count == 1:
+                for a in current.find_all("a", href=True):
+                    href = a.get("href", "").strip()
+
+                    if (
+                        "ticketsteam-" not in href
+                        and "afisha.yandex.ru" not in href
+                    ):
+                        continue
+
+                    sid = make_source_id(href)
+
+                    if sid:
+                        event_source_ids.add(sid)
+                    else:
+                        event_source_ids.add(href)
+
+                # В контейнере должно находиться ровно одно
+                # уникальное мероприятие.
+                if len(event_source_ids) == 1:
                     candidates.append(
                         (text_len, level, current, signature)
                     )
