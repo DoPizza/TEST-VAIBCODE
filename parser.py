@@ -2,39 +2,20 @@ import os
 import re
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
-
+from datetime import datetime, timedelta
 
 # ============================================================
 # НАСТРОЙКИ
 # ============================================================
 
-# Сайт, который парсим
 SOURCE_URL = "https://standupclubulsk.ru/"
-
-# Твой backend
 BACKEND_URL = "https://astonishing-pastelito-e6e568.netlify.app"
-
-# Supabase
 SUPABASE_URL = "https://tgyqyrullvofkezmqrkj.supabase.co"
 
-# ============================================================
-# ВСТАВЬ СЮДА ДАННЫЕ
-# ============================================================
-
-# Supabase → Project Settings → API → anon public
+# Данные берутся из переменных окружения / GitHub Secrets
 SUPABASE_ANON_KEY = os.environ["SUPABASE_ANON_KEY"]
-
-# Логин пользователя Supabase
 BACKEND_LOGIN = os.environ["BACKEND_LOGIN"]
-
-# Пароль пользователя Supabase
 BACKEND_PASSWORD = os.environ["BACKEND_PASSWORD"]
-
-
-# ============================================================
-# URL BACKEND
-# ============================================================
 
 GET_EVENTS_URL = f"{BACKEND_URL}/api/events"
 ADD_EVENT_URL = f"{BACKEND_URL}/api/events"
@@ -45,7 +26,6 @@ ADD_EVENT_URL = f"{BACKEND_URL}/api/events"
 # ============================================================
 
 def get_access_token():
-
     print("\nАвторизуемся в Supabase...")
 
     response = requests.post(
@@ -62,22 +42,18 @@ def get_access_token():
     )
 
     if response.status_code != 200:
-
         print("\nОШИБКА АВТОРИЗАЦИИ")
         print("HTTP:", response.status_code)
         print("Ответ:", response.text)
-
         response.raise_for_status()
 
     data = response.json()
-
     access_token = data.get("access_token")
 
     if not access_token:
         raise Exception("Supabase не вернул access_token")
 
     print("Авторизация успешна.")
-
     return access_token
 
 
@@ -86,7 +62,6 @@ def get_access_token():
 # ============================================================
 
 def get_source_html():
-
     print("Получаем сайт...")
 
     response = requests.get(
@@ -104,7 +79,6 @@ def get_source_html():
     )
 
     response.raise_for_status()
-
     return response.text
 
 
@@ -113,7 +87,6 @@ def get_source_html():
 # ============================================================
 
 def clean_text(text):
-
     if not text:
         return None
 
@@ -124,37 +97,26 @@ def clean_text(text):
 
 
 def normalize_price(text):
-
     if not text:
         return None
 
     text = clean_text(text)
-
-    # Например:
-    # "500 ₽"
-    # "500руб"
-    # "500 р."
 
     match = re.search(r"(\d+(?:[.,]\d+)?)", text)
 
     if not match:
         return None
 
-    price = match.group(1).replace(",", ".")
-
-    return price
+    return match.group(1).replace(",", ".")
 
 
 def convert_date(date_text, time_text):
-
     """
     Преобразует:
-
     20/09
     19:30
 
     в:
-
     2026-09-20T19:30:00
     """
 
@@ -189,7 +151,6 @@ def convert_date(date_text, time_text):
     year = datetime.now().year
 
     try:
-
         dt = datetime(
             year,
             month,
@@ -201,7 +162,6 @@ def convert_date(date_text, time_text):
         return dt.strftime("%Y-%m-%dT%H:%M:%S")
 
     except ValueError:
-
         return None
 
 
@@ -210,20 +170,8 @@ def convert_date(date_text, time_text):
 # ============================================================
 
 def make_source_id(url):
-
     if not url:
         return None
-
-    """
-    Из:
-
-    https://widget.afisha.yandex.ru/w/sessions/
-    ticketsteam-9145@62866058?...
-
-    получаем:
-
-    ticketsteam-9145@62866058
-    """
 
     match = re.search(
         r"(ticketsteam-\d+@\d+)",
@@ -241,11 +189,7 @@ def make_source_id(url):
 # ============================================================
 
 def find_ticket_url(block):
-
-    links = block.find_all("a")
-
-    for link in links:
-
+    for link in block.find_all("a"):
         href = link.get("href")
 
         if not href:
@@ -265,13 +209,10 @@ def find_ticket_url(block):
 # ============================================================
 
 def get_block_texts(block):
-
     texts = []
 
     for elem in block.select(".tn-elem"):
-
         text = elem.get_text(" ", strip=True)
-
         text = clean_text(text)
 
         if text:
@@ -285,9 +226,7 @@ def get_block_texts(block):
 # ============================================================
 
 def find_date(texts):
-
     for text in texts:
-
         match = re.search(
             r"\b\d{1,2}[./-]\d{1,2}\b",
             text
@@ -304,9 +243,7 @@ def find_date(texts):
 # ============================================================
 
 def find_time(texts):
-
     for text in texts:
-
         match = re.search(
             r"\b\d{1,2}:\d{2}\b",
             text
@@ -323,11 +260,8 @@ def find_time(texts):
 # ============================================================
 
 def find_price(texts):
-
     for text in texts:
-
         if "₽" in text or "руб" in text.lower():
-
             price = normalize_price(text)
 
             if price:
@@ -341,24 +275,19 @@ def find_price(texts):
 # ============================================================
 
 def find_title(texts, date_text, time_text, price):
-
     candidates = []
 
     for text in texts:
 
-        # Пропускаем дату
         if date_text and date_text in text:
             continue
 
-        # Пропускаем время
         if time_text and time_text in text:
             continue
 
-        # Пропускаем цену
         if "₽" in text or "руб" in text.lower():
             continue
 
-        # Пропускаем кнопки
         lower = text.lower()
 
         if "купить билет" in lower:
@@ -367,7 +296,6 @@ def find_title(texts, date_text, time_text, price):
         if "билет" in lower:
             continue
 
-        # Пропускаем слишком короткие технические элементы
         if len(text) < 2:
             continue
 
@@ -376,16 +304,13 @@ def find_title(texts, date_text, time_text, price):
     if not candidates:
         return None
 
-    # Обычно название находится среди наиболее заметных
-    # текстовых элементов.
-    #
-    # Для текущего сайта берем последний подходящий кандидат.
     return candidates[-1]
 
 
 # ============================================================
 # ПОИСК КАРТИНКИ
 # ============================================================
+
 def find_image(block):
 
     images = block.find_all("img")
@@ -407,10 +332,6 @@ def find_image(block):
         if src.startswith("/"):
             src = SOURCE_URL.rstrip("/") + src
 
-        # ============================================
-        # Увеличиваем изображение Tilda до 720px
-        # ============================================
-
         src = re.sub(
             r"/-/resize/\d+x/",
             "/-/resize/720x/",
@@ -418,10 +339,6 @@ def find_image(block):
         )
 
         return src
-
-    # ================================================
-    # Если изображение находится в background-image
-    # ================================================
 
     for elem in block.find_all():
 
@@ -439,7 +356,9 @@ def find_image(block):
             if src.startswith("//"):
                 src = "https:" + src
 
-            # Увеличиваем Tilda-картинку
+            if src.startswith("/"):
+                src = SOURCE_URL.rstrip("/") + src
+
             src = re.sub(
                 r"/-/resize/\d+x/",
                 "/-/resize/720x/",
@@ -450,15 +369,14 @@ def find_image(block):
 
     return None
 
+
 # ============================================================
 # ПОИСК БЛОКОВ МЕРОПРИЯТИЙ
 # ============================================================
 
 def find_event_blocks(soup):
-
     blocks = []
 
-    # На сайте мероприятия находятся в блоках uc-day...
     for elem in soup.select('[class*="uc-day"]'):
 
         classes = elem.get("class", [])
@@ -466,7 +384,6 @@ def find_event_blocks(soup):
         is_event = False
 
         for cls in classes:
-
             if cls.startswith("uc-day"):
                 is_event = True
                 break
@@ -489,13 +406,10 @@ def parse_event(block):
         return None
 
     date_text = find_date(texts)
-
     time_text = find_time(texts)
-
     price = find_price(texts)
 
     ticket_url = find_ticket_url(block)
-
     source_id = make_source_id(ticket_url)
 
     title = find_title(
@@ -510,21 +424,31 @@ def parse_event(block):
         time_text
     )
 
-    # Если не нашли дату или название,
-    # это скорее всего не мероприятие
     if not title or not start_date:
         return None
+
+    # END DATE = START DATE + 4 ЧАСА
+    start_dt = datetime.strptime(
+        start_date,
+        "%Y-%m-%dT%H:%M:%S"
+    )
+
+    end_dt = start_dt + timedelta(hours=4)
+
+    end_date = end_dt.strftime(
+        "%Y-%m-%dT%H:%M:%S"
+    )
 
     image_url = find_image(block)
 
     return {
         "title": title,
-        "description": None,
+        "description": "парсер Stand Up клуба",
         "start_date": start_date,
-        "end_date": None,
+        "end_date": end_date,
         "price": price,
         "image_url": image_url,
-        "status": "pending",
+        "status": "approved",
         "18+": False,
         "source_url": ticket_url,
         "broadcaster": "Stand Up клуб. Ульяновск.",
@@ -538,8 +462,6 @@ def parse_event(block):
 
 def parse_events(html):
 
-    print("Парсим мероприятия...")
-
     soup = BeautifulSoup(
         html,
         "html.parser"
@@ -547,42 +469,53 @@ def parse_events(html):
 
     blocks = find_event_blocks(soup)
 
-    events = []
+    print(
+        f"Найдено блоков: {len(blocks)}"
+    )
 
-    used_source_ids = set()
+    events = []
 
     for block in blocks:
 
-        event = parse_event(block)
+        try:
+            event = parse_event(block)
 
-        if not event:
-            continue
+            if not event:
+                continue
 
-        source_id = event.get("source_id")
+            # Если нет уникального ID билета,
+            # не добавляем мероприятие,
+            # потому что невозможно надежно сделать дедупликацию.
+            if not event.get("source_id"):
+                print(
+                    f"Пропущено без source_id: "
+                    f"{event.get('title')}"
+                )
+                continue
 
-        # Если нет уникального ID,
-        # пропускаем мероприятие
-        if not source_id:
+            events.append(event)
+
+        except Exception as error:
+
             print(
-                "Пропущено мероприятие без source_id:",
-                event.get("title")
+                f"Ошибка обработки блока: {error}"
             )
+
+    # Дополнительная защита от дублей
+    unique_events = []
+    seen_ids = set()
+
+    for event in events:
+
+        source_id = event["source_id"]
+
+        if source_id in seen_ids:
             continue
 
-        # Защита от дубликатов внутри сайта
-        if source_id in used_source_ids:
-            continue
+        seen_ids.add(source_id)
+        unique_events.append(event)
 
-        used_source_ids.add(source_id)
-
-        events.append(event)
-
-    # Сортируем по дате
-    events.sort(
-        key=lambda x: x["start_date"]
-    )
-
-    return events
+    return unique_events
 
 
 # ============================================================
@@ -650,12 +583,9 @@ def get_existing_source_ids(existing_events):
 
 def add_event(event, access_token):
 
-    # source_id нужен только для нашей логики.
-    # В БД его сейчас нет.
-    #
-    # Поэтому перед отправкой удаляем его.
     data = event.copy()
 
+    # source_id сейчас не хранится в БД
     data.pop("source_id", None)
 
     response = requests.post(
@@ -702,7 +632,7 @@ def main():
     events = parse_events(html)
 
     print(
-        f"Найдено мероприятий: {len(events)}"
+        f"\nНайдено мероприятий: {len(events)}"
     )
 
     print("\nМЕРОПРИЯТИЯ НА САЙТЕ:")
@@ -811,13 +741,12 @@ def main():
                 access_token
             )
 
-            print(
-                "✓ Добавлено"
-            )
+            print("✓ Добавлено")
 
             if isinstance(result, dict):
 
                 if "id" in result:
+
                     print(
                         f"  ID backend: "
                         f"{result['id']}"
