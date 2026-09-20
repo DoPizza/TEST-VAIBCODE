@@ -345,6 +345,9 @@ def find_image(block):
             img.get("src")
             or img.get("data-original")
             or img.get("data-img-zoom-url")
+            or img.get("data-src")
+            or img.get("data-original-image")
+            or img.get("data-lazy-src")
         )
 
         if not src:
@@ -471,30 +474,45 @@ def find_event_blocks(soup):
     result = []
 
     for source_id, group in groups.items():
-        # Контейнер используется только для поиска картинки.
+        # Контейнер для картинки ищем ОТДЕЛЬНО от контейнера события.
+        #
+        # В прошлой версии мы брали самый маленький контейнер, в котором
+        # находился только один source_id. У ссылок Tilda картинка часто
+        # находится выше по DOM, поэтому такой контейнер не содержал <img>
+        # или background-image.
+        #
+        # Теперь поднимаемся по DOM и запоминаем ближайший контейнер,
+        # внутри которого реально есть изображение.
         first_link = group["links"][0]
+
         container = first_link.parent
+        image_container = None
 
         current = first_link
 
-        for _ in range(12):
+        for _ in range(20):
             current = current.parent
+
             if current is None:
                 break
 
             if getattr(current, "name", None) in ("body", "html"):
                 break
 
-            ids_inside = set()
+            has_img = bool(current.find("img"))
 
-            for a in current.find_all("a", href=True):
-                sid = make_source_id(a.get("href", ""))
-                if sid:
-                    ids_inside.add(sid)
+            has_background = False
+            for elem in current.find_all(style=True):
+                style = elem.get("style", "")
+                if "background-image" in style:
+                    has_background = True
+                    break
 
-            if ids_inside == {source_id}:
-                container = current
-                break
+            if has_img or has_background:
+                image_container = current
+
+        if image_container is not None:
+            container = image_container
 
         group["container"] = container
         result.append(group)
