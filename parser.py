@@ -345,9 +345,6 @@ def find_image(block):
             img.get("src")
             or img.get("data-original")
             or img.get("data-img-zoom-url")
-            or img.get("data-src")
-            or img.get("data-original-image")
-            or img.get("data-lazy-src")
         )
 
         if not src:
@@ -439,8 +436,23 @@ def block_signature(block):
 
 def find_event_blocks(soup):
     """
-    Tilda: одно мероприятие = несколько <a> с ОДНИМ href.
-    Поэтому группируем напрямую по source_id.
+    Одно мероприятие определяется по уникальному source_id.
+
+    ВАЖНО:
+    На сайте изображение мероприятия находится в <img>, который
+    является дочерним элементом <a> С ТЕМ ЖЕ ticketsteam source_id.
+
+    Например:
+
+    <a href="...ticketsteam-9145@62865734...">
+        <img
+            data-original="https://static.tildacdn.com/.../909_____1.png"
+            src="./.../909_____1.png.webp"
+        >
+    </a>
+
+    Поэтому изображение связываем НЕ с ближайшим общим контейнером,
+    а непосредственно с anchor этого source_id.
     """
 
     groups = {}
@@ -460,7 +472,8 @@ def find_event_blocks(soup):
                 "source_id": source_id,
                 "ticket_url": href,
                 "texts": [],
-                "links": []
+                "links": [],
+                "image_url": None
             }
 
         value = clean_text(link.get_text(" ", strip=True))
@@ -469,55 +482,42 @@ def find_event_blocks(soup):
 
         groups[source_id]["links"].append(link)
 
+        # ИЩЕМ ИЗОБРАЖЕНИЕ ИМЕННО ВНУТРИ ССЫЛКИ
+        # ЭТОГО мероприятия.
+        img = link.find("img")
+
+        if img:
+            image_url = (
+                img.get("data-original")
+                or img.get("data-src")
+                or img.get("data-lazy-src")
+                or img.get("data-original-image")
+                or img.get("src")
+            )
+
+            if image_url:
+                # data-original — правильный постоянный URL Tilda.
+                # Относительный src оставляем только как запасной вариант.
+                if image_url.startswith("//"):
+                    image_url = "https:" + image_url
+                elif image_url.startswith("/"):
+                    image_url = "https://standupclubulsk.ru" + image_url
+
+                groups[source_id]["image_url"] = image_url
+
     print(f"Уникальных ссылок на мероприятия: {len(groups)}")
 
-    result = []
-
-    for source_id, group in groups.items():
-        # Контейнер для картинки ищем ОТДЕЛЬНО от контейнера события.
-        #
-        # В прошлой версии мы брали самый маленький контейнер, в котором
-        # находился только один source_id. У ссылок Tilda картинка часто
-        # находится выше по DOM, поэтому такой контейнер не содержал <img>
-        # или background-image.
-        #
-        # Теперь поднимаемся по DOM и запоминаем ближайший контейнер,
-        # внутри которого реально есть изображение.
-        first_link = group["links"][0]
-
-        container = first_link.parent
-        image_container = None
-
-        current = first_link
-
-        for _ in range(20):
-            current = current.parent
-
-            if current is None:
-                break
-
-            if getattr(current, "name", None) in ("body", "html"):
-                break
-
-            has_img = bool(current.find("img"))
-
-            has_background = False
-            for elem in current.find_all(style=True):
-                style = elem.get("style", "")
-                if "background-image" in style:
-                    has_background = True
-                    break
-
-            if has_img or has_background:
-                image_container = current
-
-        if image_container is not None:
-            container = image_container
-
-        group["container"] = container
-        result.append(group)
+    result = list(groups.values())
 
     print(f"Блоков мероприятий найдено: {len(result)}")
+
+    # Показываем найденные изображения прямо в логе.
+    for event in result:
+        print(
+            f"ИЗОБРАЖЕНИЕ: {event['source_id']} | "
+            f"{event['image_url'] or 'НЕ НАЙДЕНО'}"
+        )
+
     return result
 
 
@@ -569,7 +569,7 @@ def parse_event(event_group):
     end_dt = start_dt + timedelta(hours=4)
     end_date = end_dt.strftime("%Y-%m-%dT%H:%M:%S+00:00")
 
-    image_url = find_image(container) if container else None
+    image_url = event_group.get("image_url")
 
     return {
         "title": title,
@@ -579,7 +579,7 @@ def parse_event(event_group):
         "price": price,
         "image_url": image_url,
         "status": "approved",
-        "18+": True,
+        "18+": False,
         "source_url": ticket_url,
         "broadcaster": "Stand Up клуб. Ульяновск.",
         "source_id": source_id
