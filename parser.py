@@ -396,202 +396,199 @@ def find_image(block):
 # ПОИСК БЛОКОВ МЕРОПРИЯТИЙ
 # ============================================================
 
+def count_matches(text, pattern):
+    if not text:
+        return 0
+    return len(re.findall(pattern, text))
+
+
+def block_signature(block):
+    """
+    Проверяет, похож ли контейнер на ОДНО мероприятие.
+    Ключевой момент: в контейнере должна быть ровно одна
+    дата, одно время и одна цена.
+
+    Это не позволяет случайно взять контейнер дня,
+    внутри которого находятся 2 мероприятия.
+    """
+    text = clean_text(block.get_text(" ", strip=True))
+    if not text:
+        return None
+
+    dates = re.findall(r"\b\d{1,2}[./-]\d{1,2}\b", text)
+    times = re.findall(r"\b\d{1,2}:\d{2}\b", text)
+
+    prices = []
+    for m in re.findall(r"\d+(?:[.,]\d+)?\s*(?:₽|руб(?:\.|лей|ля)?)", text, re.I):
+        value = re.search(r"\d+(?:[.,]\d+)?", m)
+        if value:
+            prices.append(value.group(0))
+
+    if len(dates) != 1 or len(times) != 1 or len(prices) != 1:
+        return None
+
+    return {
+        "date": dates[0],
+        "time": times[0],
+        "price": prices[0],
+    }
+
+
 def find_event_blocks(soup):
     """
-    ВАЖНО:
+    Ищет каждое мероприятие НЕ по блоку дня, а по уникальной
+    ссылке на билет.
 
-    Старый вариант искал [class*="uc-day"].
-    Это была ошибка: такой блок соответствует ДНЮ,
-    а не отдельному мероприятию.
+    Старый парсер поднимался до первого родителя, содержащего
+    дату/время. На Tilda этим родителем часто оказывается весь
+    блок одного дня. Если в этот день два события, они сливались
+    в одно.
 
-    Если в один день два мероприятия, старый парсер
-    видел только один блок и поэтому получалось:
-
-        19/09 -> 1
-        20/09 -> 1
-        23/09 -> 1
-        ...
-
-    Новый вариант ищет КАЖДУЮ уникальную ссылку
-    ticketsteam-... и собирает вокруг нее отдельный
-    блок мероприятия.
-
-    На текущем сайте это позволяет получить все события,
-    включая два мероприятия в один день.
+    Новый алгоритм:
+      1. находим все ticketsteam/afisha ссылки;
+      2. для каждой ссылки идём вверх по DOM;
+      3. выбираем самый маленький контейнер, в котором ровно
+         одна дата + одно время + одна цена;
+      4. если такого контейнера нет, используем резервный
+         контейнер и позже парсим данные непосредственно вокруг
+         ссылки;
+      5. один контейнер не может скрывать другое мероприятие.
     """
 
     # --------------------------------------------------------
-    # 1. Собираем ссылки на все мероприятия
+    # 1. Уникальные ссылки на билеты
     # --------------------------------------------------------
 
-    links_by_href = {}
+    links_by_source_id = {}
 
-    for link in soup.find_all("a"):
-        href = link.get("href")
+    for link in soup.find_all("a", href=True):
+        href = link.get("href", "").strip()
 
-        if not href:
+        if "ticketsteam-" not in href and "afisha.yandex.ru" not in href:
             continue
 
-        if (
-            "ticketsteam-" not in href
-            and "afisha.yandex.ru" not in href
-        ):
-            continue
+        source_id = make_source_id(href)
 
-        # Удаляем якоря и лишние пробелы.
-        href = href.strip()
+        # Если source_id есть — он надёжнее полного URL:
+        # URL может отличаться query-параметрами.
+        key = source_id or href
 
-        links_by_href.setdefault(
-            href,
-            []
-        ).append(link)
+        links_by_source_id.setdefault(key, link)
 
-    print(
-        f"Уникальных ссылок на мероприятия: "
-        f"{len(links_by_href)}"
-    )
+    print(f"Уникальных ссылок на мероприятия: {len(links_by_source_id)}")
 
     blocks = []
 
     # --------------------------------------------------------
-    # 2. Для каждой ссылки на билет ищем
-    #    общий минимальный контейнер
+    # 2. Для каждой ссылки ищем минимальный контейнер
     # --------------------------------------------------------
 
-    for href, links in links_by_href.items():
+    for source_key, link in links_by_source_id.items():
 
-        if not links:
-            continue
+        current = link
+        candidates = []
 
-        first_link = links[0]
+        # Не уходим в body/html слишком рано.
+        for level in range(1, 16):
+            current = current.parent
 
-        # Собираем множества родителей для каждого
-        # повторения одной и той же ссылки.
-        ancestor_lists = []
-
-        for link in links:
-
-            ancestors = []
-            current = link
-
-            while current is not None:
-
-                if getattr(
-                    current,
-                    "name",
-                    None
-                ):
-
-                    ancestors.append(
-                        current
-                    )
-
-                current = current.parent
-
-            ancestor_lists.append(
-                ancestors
-            )
-
-        # Ищем ближайшего общего родителя.
-        common = None
-
-        for candidate in ancestor_lists[0]:
-
-            if all(
-                candidate in ancestors
-                for ancestors in ancestor_lists[1:]
-            ):
-
-                common = candidate
+            if current is None:
                 break
 
-        if common is None:
-            common = first_link.parent
+            if getattr(current, "name", None) in ("body", "html"):
+                break
 
-        # ----------------------------------------------------
-        # Проверяем, что это действительно мероприятие.
-        # ----------------------------------------------------
+            signature = block_signature(current)
 
-        texts = get_block_texts(
-            common
-        )
+            if signature:
+                # Чем меньше контейнер, тем лучше.
+                text_len = len(current.get_text(" ", strip=True))
 
-        date_text = find_date(
-            texts
-        )
+                # Дополнительная проверка: внутри контейнера
+                # должна быть только одна ссылка на билет.
+                ticket_count = 0
+                for a in current.find_all("a", href=True):
+                    href = a.get("href", "")
+                    if "ticketsteam-" in href or "afisha.yandex.ru" in href:
+                        ticket_count += 1
 
-        time_text = find_time(
-            texts
-        )
+                if ticket_count == 1:
+                    candidates.append(
+                        (text_len, level, current, signature)
+                    )
 
-        price = find_price(
-            texts
-        )
+        if candidates:
+            # Берём самый маленький подходящий контейнер.
+            candidates.sort(key=lambda x: (x[0], x[1]))
+            block = candidates[0][2]
 
-        if (
-            not date_text
-            or not time_text
-        ):
-            # Иногда общий родитель слишком маленький.
-            # Поднимаемся вверх до подходящего контейнера.
-            current = common
+        else:
+            # ------------------------------------------------
+            # Резервный вариант.
+            # Ищем ближайшего родителя с датой/временем,
+            # даже если цена/структура необычная.
+            # ------------------------------------------------
+            current = link
+            block = None
 
-            for _ in range(8):
-
+            for _ in range(12):
                 current = current.parent
 
                 if current is None:
                     break
 
-                texts = get_block_texts(
-                    current
-                )
+                if getattr(current, "name", None) in ("body", "html"):
+                    break
 
-                date_text = find_date(
-                    texts
-                )
-
-                time_text = find_time(
-                    texts
-                )
-
-                price = find_price(
-                    texts
+                text = clean_text(
+                    current.get_text(" ", strip=True)
                 )
 
                 if (
-                    date_text
-                    and time_text
+                    re.search(r"\b\d{1,2}[./-]\d{1,2}\b", text)
+                    and re.search(r"\b\d{1,2}:\d{2}\b", text)
                 ):
-
-                    common = current
+                    block = current
                     break
 
-        blocks.append(
-            common
-        )
+            if block is None:
+                block = link.parent
+
+        blocks.append(block)
 
     # --------------------------------------------------------
-    # 3. Убираем дубли контейнеров
+    # 3. Удаляем дубли и контейнеры, которые содержат
+    #    несколько разных мероприятий.
     # --------------------------------------------------------
 
     unique_blocks = []
-    seen_objects = set()
+    seen_ids = set()
+    seen_source_ids = set()
 
     for block in blocks:
+        if block is None:
+            continue
 
         object_id = id(block)
 
-        if object_id in seen_objects:
+        if object_id in seen_ids:
             continue
 
-        seen_objects.add(
-            object_id
-        )
+        # Определяем source_id именно этого блока.
+        ticket_url = find_ticket_url(block)
+        source_id = make_source_id(ticket_url)
 
-        unique_blocks.append(
-            block
-        )
+        if source_id and source_id in seen_source_ids:
+            continue
+
+        seen_ids.add(object_id)
+
+        if source_id:
+            seen_source_ids.add(source_id)
+
+        unique_blocks.append(block)
+
+    print(f"Блоков мероприятий найдено: {len(unique_blocks)}")
 
     return unique_blocks
 
