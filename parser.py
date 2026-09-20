@@ -579,7 +579,7 @@ def parse_event(event_group):
         "price": price,
         "image_url": image_url,
         "status": "approved",
-        "18+": False,
+        "18+": True,
         "source_url": ticket_url,
         "broadcaster": "Stand Up клуб. Ульяновск.",
         "source_id": source_id
