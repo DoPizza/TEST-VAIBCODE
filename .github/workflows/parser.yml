@@ -1,24 +1,32 @@
-name: Run Parser
+name: Парсер мероприятий
 
 on:
-  workflow_dispatch:
   schedule:
-    - cron: '0 8 * * *'
+    # Каждый час
+    - cron: "0 * * * *"
+
+  # Возможность запустить вручную кнопкой
+  workflow_dispatch:
 
 jobs:
-  run-parser:
+  parser:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Получить код
+        uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Установить Python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.12"
 
-      - name: Install dependencies
-        run: pip install requests
+      - name: Установить зависимости
+        run: pip install -r requirements.txt
 
-      - name: Run script
+      - name: Запустить парсер
+        env:
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          BACKEND_LOGIN: ${{ secrets.BACKEND_LOGIN }}
+          BACKEND_PASSWORD: ${{ secrets.BACKEND_PASSWORD }}
         run: python parser.py
