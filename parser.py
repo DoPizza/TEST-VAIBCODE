@@ -1,8 +1,9 @@
 import os
 import re
 import requests
+
 from bs4 import BeautifulSoup
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 
@@ -11,17 +12,39 @@ from zoneinfo import ZoneInfo
 # ============================================================
 
 SOURCE_URL = "https://standupclubulsk.ru/"
+
 BACKEND_URL = "https://astonishing-pastelito-e6e568.netlify.app"
+
 SUPABASE_URL = "https://tgyqyrullvofkezmqrkj.supabase.co"
 
+
+# ============================================================
+# GITHUB SECRETS
+# ============================================================
+
 SUPABASE_ANON_KEY = os.environ["SUPABASE_ANON_KEY"]
+
 BACKEND_LOGIN = os.environ["BACKEND_LOGIN"]
+
 BACKEND_PASSWORD = os.environ["BACKEND_PASSWORD"]
 
+
+# ============================================================
+# API
+# ============================================================
+
 GET_EVENTS_URL = f"{BACKEND_URL}/api/events"
+
 ADD_EVENT_URL = f"{BACKEND_URL}/api/events"
 
-# Время на сайте Stand Up клуба — Ульяновск, UTC+4.
+
+# ============================================================
+# ВРЕМЕННАЯ ЗОНА
+# ============================================================
+
+# Время мероприятий на сайте Stand Up клуба —
+# время Ульяновска, UTC+4.
+
 EVENT_TIMEZONE = ZoneInfo("Europe/Ulyanovsk")
 
 
@@ -30,34 +53,58 @@ EVENT_TIMEZONE = ZoneInfo("Europe/Ulyanovsk")
 # ============================================================
 
 def get_access_token():
+
     print("\nАвторизуемся в Supabase...")
 
     response = requests.post(
+
         f"{SUPABASE_URL}/auth/v1/token?grant_type=password",
+
         headers={
             "apikey": SUPABASE_ANON_KEY,
             "Content-Type": "application/json"
         },
+
         json={
             "email": BACKEND_LOGIN,
             "password": BACKEND_PASSWORD
         },
+
         timeout=20
     )
 
     if response.status_code != 200:
-        print("ОШИБКА АВТОРИЗАЦИИ")
-        print("HTTP:", response.status_code)
-        print("Ответ:", response.text)
+
+        print("\nОШИБКА АВТОРИЗАЦИИ")
+
+        print(
+            "HTTP:",
+            response.status_code
+        )
+
+        print(
+            "Ответ:",
+            response.text
+        )
+
         response.raise_for_status()
 
     data = response.json()
-    access_token = data.get("access_token")
+
+    access_token = data.get(
+        "access_token"
+    )
 
     if not access_token:
-        raise Exception("Supabase не вернул access_token")
 
-    print("Авторизация успешна.")
+        raise Exception(
+            "Supabase не вернул access_token"
+        )
+
+    print(
+        "Авторизация успешна."
+    )
+
     return access_token
 
 
@@ -66,39 +113,65 @@ def get_access_token():
 # ============================================================
 
 def get_source_html():
-    print("Получаем сайт...")
+
+    print(
+        "\nПолучаем сайт Stand Up клуба..."
+    )
 
     response = requests.get(
+
         SOURCE_URL,
-        timeout=30,
+
         headers={
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "AppleWebKit/537.36 "
+                "(KHTML, like Gecko) "
                 "Chrome/138.0 Safari/537.36"
             )
-        }
+        },
+
+        timeout=30
     )
 
     response.raise_for_status()
+
+    print(
+        "Сайт успешно получен."
+    )
+
     return response.text
 
 
 # ============================================================
-# ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+# ОЧИСТКА ТЕКСТА
 # ============================================================
 
 def clean_text(text):
+
     if not text:
         return None
 
-    text = text.replace("\xa0", " ")
-    text = re.sub(r"\s+", " ", text)
+    text = text.replace(
+        "\xa0",
+        " "
+    )
+
+    text = re.sub(
+        r"\s+",
+        " ",
+        text
+    )
 
     return text.strip()
 
 
+# ============================================================
+# ЦЕНА
+# ============================================================
+
 def normalize_price(text):
+
     if not text:
         return None
 
@@ -112,28 +185,61 @@ def normalize_price(text):
     if not match:
         return None
 
-    return match.group(1).replace(",", ".")
+    value = match.group(1)
+
+    value = value.replace(
+        ",",
+        "."
+    )
+
+    try:
+
+        # В БД price имеет тип bigint.
+
+        return int(
+            float(value)
+        )
+
+    except ValueError:
+
+        return None
 
 
-def convert_date(date_text, time_text):
+# ============================================================
+# ПРЕОБРАЗОВАНИЕ ДАТЫ
+# ============================================================
+
+def convert_date(
+    date_text,
+    time_text
+):
+
     """
-    Время на исходном сайте считается временем Ульяновска.
-
     Например:
-        20/09 19:30
+
+    20/09
+    19:30
 
     превращается в:
-        2026-09-20T15:30:00+00:00
 
-    Это важно, потому что Supabase хранит timestamptz
-    в UTC.
+    2026-09-20T15:30:00+00:00
+
+    Потому что Ульяновск = UTC+4.
     """
 
-    date_text = clean_text(date_text)
-    time_text = clean_text(time_text)
-
     if not date_text or not time_text:
+
         return None
+
+    date_text = clean_text(
+        date_text
+    )
+
+    time_text = clean_text(
+        time_text
+    )
+
+    # День и месяц.
 
     match = re.search(
         r"(\d{1,2})[./-](\d{1,2})",
@@ -141,10 +247,18 @@ def convert_date(date_text, time_text):
     )
 
     if not match:
+
         return None
 
-    day = int(match.group(1))
-    month = int(match.group(2))
+    day = int(
+        match.group(1)
+    )
+
+    month = int(
+        match.group(2)
+    )
+
+    # Часы и минуты.
 
     time_match = re.search(
         r"(\d{1,2}):(\d{2})",
@@ -152,14 +266,23 @@ def convert_date(date_text, time_text):
     )
 
     if not time_match:
+
         return None
 
-    hour = int(time_match.group(1))
-    minute = int(time_match.group(2))
+    hour = int(
+        time_match.group(1)
+    )
 
-    year = datetime.now(EVENT_TIMEZONE).year
+    minute = int(
+        time_match.group(2)
+    )
+
+    year = datetime.now(
+        EVENT_TIMEZONE
+    ).year
 
     try:
+
         local_dt = datetime(
             year,
             month,
@@ -169,22 +292,27 @@ def convert_date(date_text, time_text):
             tzinfo=EVENT_TIMEZONE
         )
 
-        utc_dt = local_dt.astimezone(timezone.utc)
+        utc_dt = local_dt.astimezone(
+            timezone.utc
+        )
 
         return utc_dt.strftime(
             "%Y-%m-%dT%H:%M:%S+00:00"
         )
 
     except ValueError:
+
         return None
 
 
 # ============================================================
-# SOURCE ID
+# EXTERNAL ID
 # ============================================================
 
-def make_source_id(url):
+def make_external_id(url):
+
     if not url:
+
         return None
 
     match = re.search(
@@ -193,397 +321,608 @@ def make_source_id(url):
     )
 
     if match:
+
         return match.group(1)
 
     return None
 
 
 # ============================================================
-# ССЫЛКА НА БИЛЕТЫ
+# ПОИСК ССЫЛКИ НА БИЛЕТ
 # ============================================================
 
 def find_ticket_url(block):
-    for link in block.find_all("a"):
-        href = link.get("href")
+
+    for link in block.find_all(
+        "a",
+        href=True
+    ):
+
+        href = link.get(
+            "href",
+            ""
+        ).strip()
 
         if not href:
+
             continue
 
         if "ticketsteam-" in href:
+
             return href
 
         if "afisha.yandex.ru" in href:
+
             return href
 
     return None
 
 
 # ============================================================
-# ТЕКСТЫ БЛОКА
+# ПОЛУЧЕНИЕ ТЕКСТОВ
 # ============================================================
 
 def get_block_texts(block):
+
     texts = []
 
-    # Сначала пробуем Tilda-элементы.
-    elements = block.select(".tn-elem")
+    elements = block.select(
+        ".tn-elem"
+    )
 
-    # Если LCA оказался не Tilda-блоком,
-    # берем весь текст.
+    # Если это не Tilda-блок.
+
     if not elements:
+
         text = clean_text(
-            block.get_text(" ", strip=True)
+            block.get_text(
+                " ",
+                strip=True
+            )
         )
 
-        return [text] if text else []
+        return (
+            [text]
+            if text
+            else []
+        )
 
-    for elem in elements:
+    for element in elements:
+
         text = clean_text(
-            elem.get_text(" ", strip=True)
+            element.get_text(
+                " ",
+                strip=True
+            )
         )
 
         if text:
-            texts.append(text)
+
+            texts.append(
+                text
+            )
 
     return texts
 
 
 # ============================================================
-# ДАТА
+# ПОИСК ДАТЫ
 # ============================================================
 
 def find_date(texts):
+
     for text in texts:
+
         match = re.search(
             r"\b\d{1,2}[./-]\d{1,2}\b",
             text
         )
 
         if match:
+
             return match.group(0)
 
     return None
 
 
 # ============================================================
-# ВРЕМЯ
+# ПОИСК ВРЕМЕНИ
 # ============================================================
 
 def find_time(texts):
+
     for text in texts:
+
         match = re.search(
             r"\b\d{1,2}:\d{2}\b",
             text
         )
 
         if match:
+
             return match.group(0)
 
     return None
 
 
 # ============================================================
-# ЦЕНА
+# ПОИСК ЦЕНЫ
 # ============================================================
 
 def find_price(texts):
-    for text in texts:
-        if "₽" in text or "руб" in text.lower():
-            price = normalize_price(text)
 
-            if price:
+    for text in texts:
+
+        lower = text.lower()
+
+        if (
+            "₽" in text
+            or "руб" in lower
+        ):
+
+            price = normalize_price(
+                text
+            )
+
+            if price is not None:
+
                 return price
 
     return None
 
 
 # ============================================================
-# НАЗВАНИЕ
+# ПОИСК НАЗВАНИЯ
 # ============================================================
 
-def find_title(texts, date_text, time_text, price):
+def find_title(
+    texts,
+    date_text,
+    time_text
+):
+
     candidates = []
 
     for text in texts:
-        if date_text and date_text in text:
-            continue
-
-        if time_text and time_text in text:
-            continue
-
-        if "₽" in text or "руб" in text.lower():
-            continue
 
         lower = text.lower()
 
+        # Дата.
+
+        if (
+            date_text
+            and date_text in text
+        ):
+
+            continue
+
+        # Время.
+
+        if (
+            time_text
+            and time_text in text
+        ):
+
+            continue
+
+        # Цена.
+
+        if "₽" in text:
+
+            continue
+
+        if "руб" in lower:
+
+            continue
+
+        # Служебные надписи.
+
         if "купить билет" in lower:
+
             continue
 
         if "билет" in lower:
+
             continue
 
         if len(text) < 2:
+
             continue
 
-        candidates.append(text)
+        candidates.append(
+            text
+        )
 
     if not candidates:
+
         return None
 
     return candidates[-1]
 
 
 # ============================================================
-# ИЗОБРАЖЕНИЕ
+# НОРМАЛИЗАЦИЯ URL ИЗОБРАЖЕНИЯ
 # ============================================================
 
-def find_image(block):
-    images = block.find_all("img")
+def normalize_image_url(
+    image_url
+):
 
-    for img in images:
-        src = (
-            img.get("src")
-            or img.get("data-original")
-            or img.get("data-img-zoom-url")
-        )
+    if not image_url:
 
-        if not src:
-            continue
-
-        if src.startswith("//"):
-            src = "https:" + src
-
-        if src.startswith("/"):
-            src = SOURCE_URL.rstrip("/") + src
-
-        src = re.sub(
-            r"/-/resize/\d+x/",
-            "/-/resize/720x/",
-            src
-        )
-
-        return src
-
-    for elem in block.find_all():
-        style = elem.get("style", "")
-
-        match = re.search(
-            r'background-image:\s*url\(["\']?([^"\')]+)',
-            style
-        )
-
-        if match:
-            src = match.group(1)
-
-            if src.startswith("//"):
-                src = "https:" + src
-
-            if src.startswith("/"):
-                src = SOURCE_URL.rstrip("/") + src
-
-            src = re.sub(
-                r"/-/resize/\d+x/",
-                "/-/resize/720x/",
-                src
-            )
-
-            return src
-
-    return None
-
-
-# ============================================================
-# ПОИСК БЛОКОВ МЕРОПРИЯТИЙ
-# ============================================================
-
-def count_matches(text, pattern):
-    if not text:
-        return 0
-    return len(re.findall(pattern, text))
-
-
-def block_signature(block):
-    """
-    Проверяет, похож ли контейнер на ОДНО мероприятие.
-    Ключевой момент: в контейнере должна быть ровно одна
-    дата, одно время и одна цена.
-
-    Это не позволяет случайно взять контейнер дня,
-    внутри которого находятся 2 мероприятия.
-    """
-    text = clean_text(block.get_text(" ", strip=True))
-    if not text:
         return None
 
-    dates = re.findall(r"\b\d{1,2}[./-]\d{1,2}\b", text)
-    times = re.findall(r"\b\d{1,2}:\d{2}\b", text)
+    image_url = image_url.strip()
 
-    prices = []
-    for m in re.findall(r"\d+(?:[.,]\d+)?\s*(?:₽|руб(?:\.|лей|ля)?)", text, re.I):
-        value = re.search(r"\d+(?:[.,]\d+)?", m)
-        if value:
-            prices.append(value.group(0))
+    if image_url.startswith("//"):
 
-    if len(dates) != 1 or len(times) != 1 or len(prices) != 1:
+        image_url = (
+            "https:"
+            + image_url
+        )
+
+    elif image_url.startswith("/"):
+
+        image_url = (
+            SOURCE_URL.rstrip("/")
+            + image_url
+        )
+
+    # Если Tilda отдаёт уменьшенную
+    # картинку, просим вариант 720px.
+
+    image_url = re.sub(
+        r"/-/resize/\d+x/",
+        "/-/resize/720x/",
+        image_url
+    )
+
+    return image_url
+
+
+# ============================================================
+# ПОИСК ИЗОБРАЖЕНИЯ
+# ============================================================
+
+def find_image_from_link(
+    link
+):
+
+    img = link.find(
+        "img"
+    )
+
+    if not img:
+
         return None
 
-    return {
-        "date": dates[0],
-        "time": times[0],
-        "price": prices[0],
-    }
+    # В первую очередь берём data-original,
+    # потому что там обычно нормальный
+    # оригинальный URL Tilda.
 
+    image_url = (
+
+        img.get("data-original")
+
+        or img.get("data-src")
+
+        or img.get("data-lazy-src")
+
+        or img.get("data-original-image")
+
+        or img.get("src")
+    )
+
+    return normalize_image_url(
+        image_url
+    )
+
+
+# ============================================================
+# ПОИСК МЕРОПРИЯТИЙ
+# ============================================================
 
 def find_event_blocks(soup):
-    """
-    Одно мероприятие определяется по уникальному source_id.
-
-    ВАЖНО:
-    На сайте изображение мероприятия находится в <img>, который
-    является дочерним элементом <a> С ТЕМ ЖЕ ticketsteam source_id.
-
-    Например:
-
-    <a href="...ticketsteam-9145@62865734...">
-        <img
-            data-original="https://static.tildacdn.com/.../909_____1.png"
-            src="./.../909_____1.png.webp"
-        >
-    </a>
-
-    Поэтому изображение связываем НЕ с ближайшим общим контейнером,
-    а непосредственно с anchor этого source_id.
-    """
 
     groups = {}
 
-    for link in soup.find_all("a", href=True):
-        href = link.get("href", "").strip()
+    for link in soup.find_all(
+        "a",
+        href=True
+    ):
 
-        if "ticketsteam-" not in href and "afisha.yandex.ru" not in href:
+        href = link.get(
+            "href",
+            ""
+        ).strip()
+
+        # Нас интересуют ссылки
+        # на Ticketsteam или Яндекс Афишу.
+
+        if (
+            "ticketsteam-" not in href
+            and "afisha.yandex.ru" not in href
+        ):
+
             continue
 
-        source_id = make_source_id(href)
-        if not source_id:
+        # Получаем уникальный external_id.
+
+        external_id = make_external_id(
+            href
+        )
+
+        if not external_id:
+
             continue
 
-        if source_id not in groups:
-            groups[source_id] = {
-                "source_id": source_id,
-                "ticket_url": href,
-                "texts": [],
-                "links": [],
-                "image_url": None
+        # Создаём группу.
+
+        if external_id not in groups:
+
+            groups[external_id] = {
+
+                "external_id":
+                    external_id,
+
+                "ticket_url":
+                    href,
+
+                "texts":
+                    [],
+
+                "links":
+                    [],
+
+                "image_url":
+                    None
             }
 
-        value = clean_text(link.get_text(" ", strip=True))
+        # Текст ссылки.
+
+        value = clean_text(
+            link.get_text(
+                " ",
+                strip=True
+            )
+        )
+
         if value:
-            groups[source_id]["texts"].append(value)
 
-        groups[source_id]["links"].append(link)
-
-        # ИЩЕМ ИЗОБРАЖЕНИЕ ИМЕННО ВНУТРИ ССЫЛКИ
-        # ЭТОГО мероприятия.
-        img = link.find("img")
-
-        if img:
-            image_url = (
-                img.get("data-original")
-                or img.get("data-src")
-                or img.get("data-lazy-src")
-                or img.get("data-original-image")
-                or img.get("src")
+            groups[
+                external_id
+            ][
+                "texts"
+            ].append(
+                value
             )
 
-            if image_url:
-                # data-original — правильный постоянный URL Tilda.
-                # Относительный src оставляем только как запасной вариант.
-                if image_url.startswith("//"):
-                    image_url = "https:" + image_url
-                elif image_url.startswith("/"):
-                    image_url = "https://standupclubulsk.ru" + image_url
+        # Сохраняем ссылку.
 
-                groups[source_id]["image_url"] = image_url
+        groups[
+            external_id
+        ][
+            "links"
+        ].append(
+            link
+        )
 
-    print(f"Уникальных ссылок на мероприятия: {len(groups)}")
+        # Ищем картинку непосредственно
+        # внутри ссылки мероприятия.
 
-    result = list(groups.values())
+        image_url = find_image_from_link(
+            link
+        )
 
-    print(f"Блоков мероприятий найдено: {len(result)}")
+        if image_url:
 
-    # Показываем найденные изображения прямо в логе.
-    for event in result:
+            groups[
+                external_id
+            ][
+                "image_url"
+            ] = image_url
+
+    print(
+        f"\nУникальных мероприятий: "
+        f"{len(groups)}"
+    )
+
+    # Вывод изображений в лог.
+
+    for external_id, event in groups.items():
+
         print(
-            f"ИЗОБРАЖЕНИЕ: {event['source_id']} | "
+            f"ИЗОБРАЖЕНИЕ: "
+            f"{external_id} | "
             f"{event['image_url'] or 'НЕ НАЙДЕНО'}"
         )
 
-    return result
+    return list(
+        groups.values()
+    )
 
 
 # ============================================================
 # ПАРСИНГ ОДНОГО МЕРОПРИЯТИЯ
 # ============================================================
 
-def parse_event(event_group):
-    """
-    Парсит данные непосредственно из ссылок одного source_id.
-    Благодаря этому два мероприятия одного дня не объединяются.
-    """
+def parse_event(
+    event_group
+):
 
-    texts = event_group.get("texts", [])
-    ticket_url = event_group.get("ticket_url")
-    source_id = event_group.get("source_id")
-    container = event_group.get("container")
+    texts = event_group.get(
+        "texts",
+        []
+    )
 
-    if not texts or not source_id:
+    ticket_url = event_group.get(
+        "ticket_url"
+    )
+
+    external_id = event_group.get(
+        "external_id"
+    )
+
+    image_url = event_group.get(
+        "image_url"
+    )
+
+    if (
+        not texts
+        or not external_id
+    ):
+
         return None
 
-    date_text = find_date(texts)
-    time_text = find_time(texts)
-    price = find_price(texts)
+    # Дата.
 
-    title_candidates = []
+    date_text = find_date(
+        texts
+    )
 
-    for value in texts:
-        lower = value.lower()
+    # Время.
 
-        if date_text and date_text in value:
-            continue
-        if time_text and time_text in value:
-            continue
-        if "₽" in value or "руб" in lower:
-            continue
-        if "купить билет" in lower or "билет" in lower:
-            continue
-        if len(value) >= 2:
-            title_candidates.append(value)
+    time_text = find_time(
+        texts
+    )
 
-    title = title_candidates[-1] if title_candidates else None
-    start_date = convert_date(date_text, time_text)
+    # Цена.
 
-    if not title or not start_date:
+    price = find_price(
+        texts
+    )
+
+    # Название.
+
+    title = find_title(
+        texts,
+        date_text,
+        time_text
+    )
+
+    # Дата в формате Supabase.
+
+    start_date = convert_date(
+        date_text,
+        time_text
+    )
+
+    if (
+        not title
+        or not start_date
+    ):
+
         return None
 
-    start_dt = datetime.fromisoformat(start_date)
-    end_dt = start_dt + timedelta(hours=4)
-    end_date = end_dt.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    # ========================================================
+    # СОБЫТИЕ ПОД НОВУЮ ТАБЛИЦУ
+    # ========================================================
 
-    image_url = event_group.get("image_url")
+    event = {
 
-    return {
+        # ------------------------------
+        # Название
+        # ------------------------------
+
         "title": title,
-        "description": "парсер Stand Up клуба",
-        "start_date": start_date,
-        "end_date": end_date,
-        "price": price,
-        "image_url": image_url,
-        "status": "approved",
-        "18+": True,
-        "source_url": ticket_url,
-        "broadcaster": "Stand Up клуб. Ульяновск.",
-        "source_id": source_id
+
+        # ------------------------------
+        # Описание
+        # ------------------------------
+
+        "description":
+            "Мероприятие Stand Up клуба",
+
+        # ------------------------------
+        # Статус
+        # ------------------------------
+
+        "status":
+            "approved",
+
+        # ------------------------------
+        # Дата начала
+        # ------------------------------
+
+        "start_date":
+            start_date,
+
+        # ------------------------------
+        # Дата окончания
+        # ------------------------------
+        #
+        # Оставляем None.
+        #
+        # Твой Supabase trigger должен
+        # поставить start_date + 12 часов.
+
+        "end_date":
+            None,
+
+        # ------------------------------
+        # Цена
+        # ------------------------------
+
+        "price":
+            price,
+
+        # ------------------------------
+        # Картинка
+        # ------------------------------
+
+        "image_url":
+            image_url,
+
+        # ------------------------------
+        # Источник
+        # ------------------------------
+
+        "source_url":
+            ticket_url,
+
+        "source":
+            "standupclub",
+
+        # ------------------------------
+        # Организатор
+        # ------------------------------
+
+        "broadcaster":
+            "Stand Up клуб. Ульяновск.",
+
+        "broadcaster_url":
+            SOURCE_URL,
+
+        # ------------------------------
+        # Возраст
+        # ------------------------------
+
+        "age":
+            18,
+
+        # ------------------------------
+        # Тип мероприятия
+        # ------------------------------
+
+        "type":
+            "стендап",
+
+        # ------------------------------
+        # Адрес
+        # ------------------------------
+
+        "address":
+            "Ульяновск",
+
+        # ------------------------------
+        # Уникальный ID
+        # ------------------------------
+
+        "external_id":
+            external_id
     }
+
+    return event
 
 
 # ============================================================
@@ -591,6 +930,7 @@ def parse_event(event_group):
 # ============================================================
 
 def parse_events(html):
+
     soup = BeautifulSoup(
         html,
         "html.parser"
@@ -601,7 +941,7 @@ def parse_events(html):
     )
 
     print(
-        f"Блоков мероприятий найдено: "
+        f"\nБлоков мероприятий найдено: "
         f"{len(blocks)}"
     )
 
@@ -610,24 +950,19 @@ def parse_events(html):
     for block in blocks:
 
         try:
+
             event = parse_event(
                 block
             )
 
             if not event:
-                print(
-                    "Пропущен блок: "
-                    "не удалось определить дату/время/название."
-                )
-                continue
 
-            if not event.get(
-                "source_id"
-            ):
                 print(
-                    f"Пропущено без source_id: "
-                    f"{event.get('title')}"
+                    "Пропущено мероприятие: "
+                    "не удалось определить "
+                    "дату/время/название."
                 )
+
                 continue
 
             events.append(
@@ -635,29 +970,36 @@ def parse_events(html):
             )
 
         except Exception as error:
+
             print(
-                f"Ошибка обработки блока: "
+                f"Ошибка обработки: "
                 f"{error}"
             )
 
-    # --------------------------------------------------------
-    # Финальная дедупликация
-    # --------------------------------------------------------
+    # ========================================================
+    # ФИНАЛЬНАЯ ДЕДУПЛИКАЦИЯ
+    # ========================================================
 
     unique_events = []
+
     seen_ids = set()
 
     for event in events:
 
-        source_id = event[
-            "source_id"
-        ]
+        external_id = event.get(
+            "external_id"
+        )
 
-        if source_id in seen_ids:
+        if not external_id:
+
+            continue
+
+        if external_id in seen_ids:
+
             continue
 
         seen_ids.add(
-            source_id
+            external_id
         )
 
         unique_events.append(
@@ -668,28 +1010,44 @@ def parse_events(html):
 
 
 # ============================================================
-# ПОЛУЧЕНИЕ СОБЫТИЙ ИЗ BACKEND
+# ПОЛУЧЕНИЕ СУЩЕСТВУЮЩИХ МЕРОПРИЯТИЙ
 # ============================================================
 
 def get_existing_events(
     access_token
 ):
+
+    print(
+        "\nПолучаем мероприятия из backend..."
+    )
+
     response = requests.get(
+
         GET_EVENTS_URL,
+
         headers={
             "Authorization":
                 f"Bearer {access_token}"
         },
+
         timeout=20
     )
 
     if response.status_code == 401:
-        print("\nBACKEND ВЕРНУЛ 401.")
+
         print(
-            "Проверь логин, пароль "
+            "\nBACKEND ВЕРНУЛ 401."
+        )
+
+        print(
+            "Проверь BACKEND_LOGIN, "
+            "BACKEND_PASSWORD "
             "и Supabase token."
         )
-        print(response.text)
+
+        print(
+            response.text
+        )
 
     response.raise_for_status()
 
@@ -699,70 +1057,71 @@ def get_existing_events(
         data,
         list
     ):
+
         raise Exception(
             "Backend вернул неожиданный формат:\n"
             + str(data)
         )
 
+    print(
+        f"В backend найдено: "
+        f"{len(data)}"
+    )
+
     return data
 
 
 # ============================================================
-# SOURCE ID СУЩЕСТВУЮЩИХ СОБЫТИЙ
+# ПОЛУЧЕНИЕ EXISTING EXTERNAL_ID
 # ============================================================
 
-def get_existing_source_ids(
+def get_existing_external_ids(
     existing_events
 ):
-    source_ids = set()
+
+    external_ids = set()
 
     for event in existing_events:
 
-        source_url = event.get(
-            "source_url"
+        external_id = event.get(
+            "external_id"
         )
 
-        if not source_url:
+        if not external_id:
+
             continue
 
-        source_id = make_source_id(
-            source_url
+        external_ids.add(
+            str(external_id)
         )
 
-        if source_id:
-            source_ids.add(
-                source_id
-            )
-
-    return source_ids
+    return external_ids
 
 
 # ============================================================
-# ДОБАВЛЕНИЕ СОБЫТИЯ
+# ДОБАВЛЕНИЕ МЕРОПРИЯТИЯ
 # ============================================================
 
 def add_event(
     event,
     access_token
 ):
-    data = event.copy()
-
-    # source_id используется только
-    # для дедупликации.
-    data.pop(
-        "source_id",
-        None
-    )
 
     response = requests.post(
+
         ADD_EVENT_URL,
+
         headers={
+
             "Authorization":
                 f"Bearer {access_token}",
+
             "Content-Type":
                 "application/json"
         },
-        json=data,
+
+        json=event,
+
         timeout=20
     )
 
@@ -770,15 +1129,21 @@ def add_event(
         200,
         201
     ):
-        print("\nОШИБКА ДОБАВЛЕНИЯ")
+
+        print(
+            "\nОШИБКА ДОБАВЛЕНИЯ"
+        )
+
         print(
             "HTTP:",
             response.status_code
         )
+
         print(
             "Ответ:",
             response.text
         )
+
         response.raise_for_status()
 
     return response.json()
@@ -790,19 +1155,27 @@ def add_event(
 
 def main():
 
-    print("=" * 60)
-    print("ПАРСЕР МЕРОПРИЯТИЙ STAND UP КЛУБА")
-    print("=" * 60)
+    print(
+        "=" * 60
+    )
 
-    # --------------------------------------------------------
-    # 1. Сайт
-    # --------------------------------------------------------
+    print(
+        "ПАРСЕР STAND UP КЛУБА"
+    )
+
+    print(
+        "=" * 60
+    )
+
+    # ========================================================
+    # 1. Получение сайта
+    # ========================================================
 
     html = get_source_html()
 
-    # --------------------------------------------------------
+    # ========================================================
     # 2. Парсинг
-    # --------------------------------------------------------
+    # ========================================================
 
     events = parse_events(
         html
@@ -813,6 +1186,10 @@ def main():
         f"{len(events)}"
     )
 
+    # ========================================================
+    # 3. Вывод распознанных
+    # ========================================================
+
     print(
         "\nРАСПОЗНАННЫЕ МЕРОПРИЯТИЯ:"
     )
@@ -820,84 +1197,86 @@ def main():
     for event in events:
 
         print(
-            f"- {event['start_date']} | "
-            f"{event['title']} | "
-            f"{event['price']} ₽ | "
-            f"{event['source_id']}"
+
+            f"- "
+            f"{event.get('start_date')} | "
+            f"{event.get('title')} | "
+            f"{event.get('price')} ₽ | "
+            f"age={event.get('age')} | "
+            f"type={event.get('type')} | "
+            f"external_id={event.get('external_id')}"
         )
 
-    # --------------------------------------------------------
-    # 3. Авторизация
-    # --------------------------------------------------------
+    # ========================================================
+    # 4. Авторизация
+    # ========================================================
 
     access_token = get_access_token()
 
-    # --------------------------------------------------------
-    # 4. Существующие события
-    # --------------------------------------------------------
-
-    print(
-        "\nПолучаем мероприятия из backend..."
-    )
+    # ========================================================
+    # 5. Существующие мероприятия
+    # ========================================================
 
     existing_events = get_existing_events(
         access_token
     )
 
-    print(
-        f"В backend найдено: "
-        f"{len(existing_events)}"
-    )
+    # ========================================================
+    # 6. Существующие external_id
+    # ========================================================
 
-    existing_source_ids = (
-        get_existing_source_ids(
+    existing_external_ids = (
+        get_existing_external_ids(
             existing_events
         )
     )
 
     print(
-        f"Уже известных source_id: "
-        f"{len(existing_source_ids)}"
+        f"\nУже известных external_id: "
+        f"{len(existing_external_ids)}"
     )
 
-    # --------------------------------------------------------
-    # 5. Новые события
-    # --------------------------------------------------------
+    # ========================================================
+    # 7. Определяем новые мероприятия
+    # ========================================================
 
     new_events = []
 
     for event in events:
 
-        source_id = event[
-            "source_id"
-        ]
+        external_id = str(
+            event.get(
+                "external_id"
+            )
+        )
 
-        if source_id in existing_source_ids:
+        if external_id in existing_external_ids:
 
             print(
-                f"Уже существует: "
-                f"{event['start_date']} | "
+
+                f"УЖЕ СУЩЕСТВУЕТ: "
                 f"{event['title']} | "
-                f"{source_id}"
+                f"{external_id}"
             )
 
         else:
 
             print(
+
                 f"НОВОЕ: "
-                f"{event['start_date']} | "
                 f"{event['title']} | "
-                f"{event['18+']} | "
-                f"{source_id}"
+                f"{event['start_date']} | "
+                f"age={event['age']} | "
+                f"external_id={external_id}"
             )
 
             new_events.append(
                 event
             )
 
-    # --------------------------------------------------------
-    # 6. Добавление
-    # --------------------------------------------------------
+    # ========================================================
+    # 8. Добавление
+    # ========================================================
 
     print(
         f"\nНовых мероприятий: "
@@ -930,15 +1309,45 @@ def main():
             added += 1
 
             print(
-                f"✓ Добавлено: "
-                f"{event['title']} | "
+                f"\n✓ Добавлено: "
+                f"{event['title']}"
+            )
+
+            print(
+                f"  external_id: "
+                f"{event['external_id']}"
+            )
+
+            print(
+                f"  start_date: "
                 f"{event['start_date']}"
+            )
+
+            print(
+                f"  end_date: "
+                f"{event['end_date']}"
+            )
+
+            print(
+                f"  price: "
+                f"{event['price']}"
+            )
+
+            print(
+                f"  age: "
+                f"{event['age']}"
+            )
+
+            print(
+                f"  type: "
+                f"{event['type']}"
             )
 
             if (
                 isinstance(result, dict)
                 and "id" in result
             ):
+
                 print(
                     f"  ID backend: "
                     f"{result['id']}"
@@ -947,16 +1356,27 @@ def main():
         except Exception as error:
 
             print(
-                f"✗ Ошибка добавления "
+
+                f"\n✗ Ошибка добавления "
                 f"{event['title']}: "
                 f"{error}"
             )
 
-    print("\n" + "=" * 60)
+    # ========================================================
+    # 9. Готово
+    # ========================================================
+
+    print(
+        "\n" + "=" * 60
+    )
+
     print(
         f"ГОТОВО. Добавлено: {added}"
     )
-    print("=" * 60)
+
+    print(
+        "=" * 60
+    )
 
 
 # ============================================================
@@ -964,4 +1384,5 @@ def main():
 # ============================================================
 
 if __name__ == "__main__":
+
     main()
