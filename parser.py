@@ -921,7 +921,7 @@ def parse_event(
         "external_id":
             external_id,
         
-        "warring":
+        "warning":
             "Проверьте источник! Мероприятие может быть отменено"
     }
 
