@@ -927,7 +927,7 @@ def parse_event(
         "source2":
             "standupclubulsk",
         
-        "source2_url ":
+        "source2_url":
             "https://standupclubulsk.ru/"
         
     }
