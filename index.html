@@ -1,4 +1,4 @@
-
+```html
 <!DOCTYPE html>
 <html lang="ru">
 
@@ -11,7 +11,7 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Афиша Ульяновска — Тест</title>
+    <title>УлДвиж — мероприятия Ульяновска</title>
 
     <style>
 
@@ -44,10 +44,12 @@
 
         #events {
             display: grid;
-            grid-template-columns: repeat(
-                auto-fit,
-                minmax(280px, 1fr)
-            );
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(280px, 1fr)
+                );
 
             gap: 20px;
         }
@@ -70,6 +72,7 @@
             height: 220px;
 
             display: flex;
+
             align-items: center;
             justify-content: center;
 
@@ -96,7 +99,8 @@
                 transform 0.2s ease;
         }
 
-        .event-image-wrapper:hover .event-image {
+        .event-image-wrapper:hover
+        .event-image {
             transform: scale(1.03);
         }
 
@@ -105,6 +109,7 @@
             height: 100%;
 
             display: flex;
+
             align-items: center;
             justify-content: center;
 
@@ -117,6 +122,7 @@
             margin: 0 0 10px;
 
             font-size: 22px;
+
             line-height: 1.25;
         }
 
@@ -140,6 +146,7 @@
             background: #eeeeee;
 
             font-size: 14px;
+
             font-weight: bold;
         }
 
@@ -147,6 +154,8 @@
             margin-bottom: 10px;
 
             font-weight: bold;
+
+            line-height: 1.5;
         }
 
         .event-price {
@@ -155,14 +164,16 @@
             font-weight: bold;
         }
 
-        .event-broadcaster {
+        .event-info {
             margin-top: 10px;
             margin-bottom: 10px;
 
-            line-height: 1.4;
+            line-height: 1.5;
+
+            color: #444;
         }
 
-        .event-broadcaster a {
+        .event-info a {
             color: inherit;
 
             font-weight: bold;
@@ -170,7 +181,7 @@
             text-decoration: none;
         }
 
-        .event-broadcaster a:hover {
+        .event-info a:hover {
             text-decoration: underline;
         }
 
@@ -178,6 +189,7 @@
             display: inline-block;
 
             margin-top: 5px;
+            margin-right: 5px;
 
             padding: 5px 9px;
 
@@ -188,7 +200,65 @@
             color: #c00;
 
             font-size: 14px;
+
             font-weight: bold;
+        }
+
+        .event-type {
+            display: inline-block;
+
+            margin-top: 5px;
+
+            padding: 5px 9px;
+
+            border-radius: 6px;
+
+            background: #eeeeee;
+
+            color: #555;
+
+            font-size: 14px;
+
+            font-weight: bold;
+        }
+
+        .event-warning {
+            margin-top: 12px;
+
+            padding: 10px;
+
+            border-radius: 8px;
+
+            background: #fff3cd;
+
+            color: #856404;
+
+            line-height: 1.4;
+
+            font-size: 14px;
+        }
+
+        .event-source {
+            margin-top: 15px;
+
+            padding-top: 10px;
+
+            border-top:
+                1px solid #eeeeee;
+
+            font-size: 14px;
+
+            color: #777;
+        }
+
+        .event-source a {
+            color: #555;
+
+            text-decoration: none;
+        }
+
+        .event-source a:hover {
+            text-decoration: underline;
         }
 
         .loading {
@@ -225,7 +295,8 @@
             width: 100%;
             height: 100%;
 
-            background: rgba(0, 0, 0, 0.88);
+            background:
+                rgba(0, 0, 0, 0.88);
 
             display: none;
 
@@ -250,7 +321,8 @@
             border-radius: 8px;
 
             box-shadow:
-                0 10px 40px rgba(0, 0, 0, 0.5);
+                0 10px 40px
+                rgba(0, 0, 0, 0.5);
         }
 
         .image-modal-close {
@@ -263,6 +335,7 @@
             height: 45px;
 
             display: flex;
+
             align-items: center;
             justify-content: center;
 
@@ -329,7 +402,7 @@
     <div class="container">
 
         <h1>
-            Афиша Ульяновска — Тест
+            УлДвиж — мероприятия Ульяновска
         </h1>
 
         <div id="events">
@@ -376,10 +449,33 @@
 
 
         // ======================================
+        // ЭКРАНИРОВАНИЕ HTML
+        // ======================================
+
+        function escapeHTML(value) {
+
+            if (
+                value === null ||
+                value === undefined
+            ) {
+                return "";
+            }
+
+            return String(value)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+
+        }
+
+
+        // ======================================
         // ФОРМАТИРОВАНИЕ ДАТЫ
         // ======================================
 
-        function formatStartDate(dateString) {
+        function formatDate(dateString) {
 
             if (!dateString) {
                 return "Дата не указана";
@@ -388,10 +484,48 @@
             const date =
                 new Date(dateString);
 
-            if (isNaN(date.getTime())) {
+            if (
+                isNaN(
+                    date.getTime()
+                )
+            ) {
                 return "Некорректная дата";
             }
 
+            return date.toLocaleString(
+                "ru-RU",
+                {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                }
+            );
+
+        }
+
+
+        // ======================================
+        // ОБРАТНЫЙ ОТСЧЁТ
+        // ======================================
+
+        function formatStartDate(dateString) {
+
+            if (!dateString) {
+                return "📅 Дата не указана";
+            }
+
+            const date =
+                new Date(dateString);
+
+            if (
+                isNaN(
+                    date.getTime()
+                )
+            ) {
+                return "📅 Некорректная дата";
+            }
 
             const now =
                 new Date();
@@ -401,7 +535,6 @@
                 now.getTime();
 
 
-            // Мероприятие уже началось
             if (difference <= 0) {
 
                 return "🔴 Уже началось";
@@ -415,12 +548,10 @@
                     (1000 * 60)
                 );
 
-
             const hours =
                 Math.floor(
                     minutes / 60
                 );
-
 
             const days =
                 Math.floor(
@@ -437,7 +568,7 @@
 
             if (days === 1) {
 
-                return `📅 Начнётся через 1 день`;
+                return "📅 Начнётся через 1 день";
 
             }
 
@@ -451,7 +582,7 @@
 
             if (hours === 1) {
 
-                return `⏰ Начнётся через 1 час`;
+                return "⏰ Начнётся через 1 час";
 
             }
 
@@ -465,7 +596,7 @@
 
             if (minutes === 1) {
 
-                return `⏱️ Начнётся через 1 минуту`;
+                return "⏱️ Начнётся через 1 минуту";
 
             }
 
@@ -485,7 +616,6 @@
                 return;
             }
 
-
             const modal =
                 document.getElementById(
                     "image-modal"
@@ -496,13 +626,11 @@
                     "modal-image"
                 );
 
-
             modalImage.src = url;
 
             modal.classList.add(
                 "active"
             );
-
 
             document.body.style.overflow =
                 "hidden";
@@ -526,14 +654,11 @@
                     "modal-image"
                 );
 
-
             modal.classList.remove(
                 "active"
             );
 
-
             modalImage.src = "";
-
 
             document.body.style.overflow =
                 "";
@@ -551,7 +676,6 @@
                 document.getElementById(
                     "events"
                 );
-
 
             try {
 
@@ -580,9 +704,11 @@
                 ) {
 
                     container.innerHTML = `
+
                         <div class="loading">
                             Мероприятий пока нет
                         </div>
+
                     `;
 
                     return;
@@ -604,20 +730,34 @@
 
                             if (
                                 event.image_url &&
-                                event.image_url.trim() !== ""
+                                String(
+                                    event.image_url
+                                ).trim() !== ""
                             ) {
+
+                                const imageUrl =
+                                    escapeHTML(
+                                        event.image_url
+                                    );
+
+                                const imageTitle =
+                                    escapeHTML(
+                                        event.title ||
+                                        "Изображение мероприятия"
+                                    );
 
                                 imageHTML = `
 
                                     <div
                                         class="event-image-wrapper"
-                                        onclick="openImage('${event.image_url}')"
+                                        onclick="openImage('${imageUrl}')"
                                     >
 
                                         <img
                                             class="event-image"
-                                            src="${event.image_url}"
-                                            alt="${event.title || "Изображение мероприятия"}"
+                                            src="${imageUrl}"
+                                            alt="${imageTitle}"
+                                            onerror="this.parentElement.innerHTML='<div class=no-image>🖼️ Ошибка загрузки изображения</div>'"
                                         >
 
                                     </div>
@@ -644,7 +784,7 @@
 
 
                             // ======================================
-                            // ВЕЩАТЕЛЬ
+                            // ВЕЩАТЕЛЬ / ОРГАНИЗАТОР
                             // ======================================
 
                             let broadcasterHTML = "";
@@ -652,28 +792,38 @@
 
                             if (
                                 event.broadcaster &&
-                                event.broadcaster.trim() !== ""
+                                String(
+                                    event.broadcaster
+                                ).trim() !== ""
                             ) {
 
+                                const broadcaster =
+                                    escapeHTML(
+                                        event.broadcaster
+                                    );
+
+
                                 if (
-                                    event.source_url &&
-                                    event.source_url.trim() !== ""
+                                    event.broadcaster_url &&
+                                    String(
+                                        event.broadcaster_url
+                                    ).trim() !== ""
                                 ) {
 
                                     broadcasterHTML = `
 
                                         <div
-                                            class="event-broadcaster"
+                                            class="event-info"
                                         >
 
-                                            📢 Вещатель:
+                                            📢 Организатор:
 
                                             <a
-                                                href="${event.source_url}"
+                                                href="${escapeHTML(event.broadcaster_url)}"
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                             >
-                                                ${event.broadcaster}
+                                                ${broadcaster}
                                             </a>
 
                                         </div>
@@ -685,13 +835,13 @@
                                     broadcasterHTML = `
 
                                         <div
-                                            class="event-broadcaster"
+                                            class="event-info"
                                         >
 
-                                            📢 Вещатель:
+                                            📢 Организатор:
 
                                             <b>
-                                                ${event.broadcaster}
+                                                ${broadcaster}
                                             </b>
 
                                         </div>
@@ -704,20 +854,52 @@
 
 
                             // ======================================
-                            // 18+
+                            // ВОЗРАСТ
                             // ======================================
 
                             let ageHTML = "";
 
 
                             if (
-                                event["18+"] === true
+                                event.age !== null &&
+                                event.age !== undefined &&
+                                event.age !== "" &&
+                                Number(event.age) > 0
                             ) {
 
                                 ageHTML = `
 
-                                    <div class="age-limit">
-                                        🔞 18+
+                                    <div
+                                        class="age-limit"
+                                    >
+                                        🔞 ${escapeHTML(event.age)}+
+                                    </div>
+
+                                `;
+
+                            }
+
+
+                            // ======================================
+                            // ТИП
+                            // ======================================
+
+                            let typeHTML = "";
+
+
+                            if (
+                                event.type &&
+                                String(
+                                    event.type
+                                ).trim() !== ""
+                            ) {
+
+                                typeHTML = `
+
+                                    <div
+                                        class="event-type"
+                                    >
+                                        🎭 ${escapeHTML(event.type)}
                                     </div>
 
                                 `;
@@ -738,10 +920,208 @@
                                 event.price !== ""
                             ) {
 
-                                priceHTML = `
+                                const price =
+                                    Number(
+                                        event.price
+                                    );
 
-                                    <div class="event-price">
-                                        💰 ${event.price} ₽
+
+                                if (
+                                    !isNaN(price)
+                                ) {
+
+                                    priceHTML = `
+
+                                        <div
+                                            class="event-price"
+                                        >
+                                            💰 ${price.toLocaleString("ru-RU")} ₽
+                                        </div>
+
+                                    `;
+
+                                }
+
+                            }
+
+
+                            // ======================================
+                            // АДРЕС
+                            // ======================================
+
+                            let addressHTML = "";
+
+
+                            if (
+                                event.address &&
+                                String(
+                                    event.address
+                                ).trim() !== ""
+                            ) {
+
+                                addressHTML = `
+
+                                    <div
+                                        class="event-info"
+                                    >
+
+                                        📍 ${escapeHTML(event.address)}
+
+                                    </div>
+
+                                `;
+
+                            }
+
+
+                            // ======================================
+                            // ДАТА
+                            // ======================================
+
+                            let dateHTML = "";
+
+
+                            if (
+                                event.start_date
+                            ) {
+
+                                dateHTML = `
+
+                                    <div
+                                        class="event-date"
+                                    >
+
+                                        ${formatStartDate(
+                                            event.start_date
+                                        )}
+
+                                        <br>
+
+                                        📅 ${formatDate(
+                                            event.start_date
+                                        )}
+
+                                    </div>
+
+                                `;
+
+                            }
+
+
+                            // ======================================
+                            // ДАТА ОКОНЧАНИЯ
+                            // ======================================
+
+                            let endDateHTML = "";
+
+
+                            if (
+                                event.end_date
+                            ) {
+
+                                endDateHTML = `
+
+                                    <div
+                                        class="event-info"
+                                    >
+
+                                        🏁 Окончание:
+
+                                        ${formatDate(
+                                            event.end_date
+                                        )}
+
+                                    </div>
+
+                                `;
+
+                            }
+
+
+                            // ======================================
+                            // ПРЕДУПРЕЖДЕНИЕ
+                            // ======================================
+
+                            let warningHTML = "";
+
+
+                            if (
+                                event.warning &&
+                                String(
+                                    event.warning
+                                ).trim() !== ""
+                            ) {
+
+                                warningHTML = `
+
+                                    <div
+                                        class="event-warning"
+                                    >
+
+                                        ⚠️
+                                        ${escapeHTML(event.warning)}
+
+                                    </div>
+
+                                `;
+
+                            }
+
+
+                            // ======================================
+                            // ИСТОЧНИК
+                            // ======================================
+
+                            let sourceHTML = "";
+
+
+                            if (
+                                event.source_url &&
+                                String(
+                                    event.source_url
+                                ).trim() !== ""
+                            ) {
+
+                                const sourceName =
+                                    event.source ||
+                                    "Источник";
+
+                                sourceHTML = `
+
+                                    <div
+                                        class="event-source"
+                                    >
+
+                                        🔗 Источник:
+
+                                        <a
+                                            href="${escapeHTML(event.source_url)}"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            ${escapeHTML(sourceName)}
+                                        </a>
+
+                                    </div>
+
+                                `;
+
+                            } else if (
+                                event.source &&
+                                String(
+                                    event.source
+                                ).trim() !== ""
+                            ) {
+
+                                sourceHTML = `
+
+                                    <div
+                                        class="event-source"
+                                    >
+
+                                        🔗 Источник:
+                                        ${escapeHTML(event.source)}
+
                                     </div>
 
                                 `;
@@ -765,18 +1145,27 @@
                                     <h2
                                         class="event-title"
                                     >
-                                        ${event.title || "Без названия"}
+                                        ${
+                                            escapeHTML(
+                                                event.title ||
+                                                "Без названия"
+                                            )
+                                        }
                                     </h2>
 
 
                                     ${
                                         event.status
                                         ? `
+
                                             <div
                                                 class="event-status"
                                             >
-                                                ${event.status}
+                                                ${escapeHTML(
+                                                    event.status
+                                                )}
                                             </div>
+
                                         `
                                         : ""
                                     }
@@ -785,32 +1174,43 @@
                                     ${
                                         event.description
                                         ? `
+
                                             <div
                                                 class="event-description"
                                             >
-                                                ${event.description}
+                                                ${escapeHTML(
+                                                    event.description
+                                                )}
                                             </div>
+
                                         `
                                         : ""
                                     }
 
 
-                                    <div
-                                        class="event-date"
-                                    >
-                                        ${formatStartDate(
-                                            event.start_date
-                                        )}
-                                    </div>
+                                    ${dateHTML}
 
+                                    ${endDateHTML}
 
                                     ${priceHTML}
 
+                                    ${addressHTML}
 
                                     ${broadcasterHTML}
 
 
-                                    ${ageHTML}
+                                    <div>
+
+                                        ${ageHTML}
+
+                                        ${typeHTML}
+
+                                    </div>
+
+
+                                    ${warningHTML}
+
+                                    ${sourceHTML}
 
                                 </div>
 
@@ -836,7 +1236,9 @@
 
                         <br><br>
 
-                        ${error.message}
+                        ${escapeHTML(
+                            error.message
+                        )}
 
                     </div>
 
@@ -913,8 +1315,7 @@
 
 
         // ======================================
-        // ОБНОВЛЕНИЕ ОБРАТНОГО ОТСЧЁТА
-        // КАЖДУЮ МИНУТУ
+        // ОБНОВЛЕНИЕ КАЖДУЮ МИНУТУ
         // ======================================
 
         setInterval(
@@ -929,3 +1330,4 @@
 </body>
 
 </html>
+```
