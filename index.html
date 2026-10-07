@@ -1072,28 +1072,29 @@
                             // ИСТОЧНИК
                             // ======================================
 
+                            
                             let sourceHTML = "";
-
-
+                            
+                            
                             if (
                                 event.source_url &&
                                 String(
                                     event.source_url
                                 ).trim() !== ""
                             ) {
-
+                            
                                 const sourceName =
                                     event.source ||
                                     "Источник";
-
+                            
                                 sourceHTML = `
-
+                            
                                     <div
                                         class="event-source"
                                     >
-
+                            
                                         🔗 Источник:
-
+                            
                                         <a
                                             href="${escapeHTML(event.source_url)}"
                                             target="_blank"
@@ -1101,33 +1102,93 @@
                                         >
                                             ${escapeHTML(sourceName)}
                                         </a>
-
+                            
                                     </div>
-
+                            
                                 `;
-
+                            
                             } else if (
                                 event.source &&
                                 String(
                                     event.source
                                 ).trim() !== ""
                             ) {
-
+                            
                                 sourceHTML = `
-
+                            
                                     <div
                                         class="event-source"
                                     >
-
+                            
                                         🔗 Источник:
                                         ${escapeHTML(event.source)}
-
+                            
                                     </div>
-
+                            
                                 `;
-
+                            
                             }
-
+                            
+                            
+                            /* ======================================
+                               ВТОРОЙ ИСТОЧНИК
+                               ====================================== */
+                            
+                            let source2HTML = "";
+                            
+                            
+                            if (
+                                event.source2_url &&
+                                String(
+                                    event.source2_url
+                                ).trim() !== ""
+                            ) {
+                            
+                                const source2Name =
+                                    event.source2 ||
+                                    "Дополнительный источник";
+                            
+                                source2HTML = `
+                            
+                                    <div
+                                        class="event-source"
+                                    >
+                            
+                                        🔗 Доп. источник:
+                            
+                                        <a
+                                            href="${escapeHTML(event.source2_url)}"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            ${escapeHTML(source2Name)}
+                                        </a>
+                            
+                                    </div>
+                            
+                                `;
+                            
+                            } else if (
+                                event.source2 &&
+                                String(
+                                    event.source2
+                                ).trim() !== ""
+                            ) {
+                            
+                                source2HTML = `
+                            
+                                    <div
+                                        class="event-source"
+                                    >
+                            
+                                        🔗 Доп. источник:
+                                        ${escapeHTML(event.source2)}
+                            
+                                    </div>
+                            
+                                `;
+                            
+                            }
 
                             // ======================================
                             // КАРТОЧКА
