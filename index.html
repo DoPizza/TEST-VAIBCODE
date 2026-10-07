@@ -715,7 +715,16 @@
 
                 }
 
-
+                events.sort((a, b) => {
+                
+                    const dateA = new Date(a.start_date).getTime();
+                    const dateB = new Date(b.start_date).getTime();
+                
+                    return dateA - dateB;
+                
+                });
+                
+                
                 container.innerHTML =
                     events.map(
                         event => {
