@@ -5,60 +5,242 @@
 
     <meta charset="UTF-8">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <title>Админка мероприятий</title>
+    <title>Админка — УлДвиж</title>
 
     <style>
 
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: Arial, sans-serif;
+
             max-width: 1200px;
+
             margin: 40px auto;
+
             padding: 0 20px;
+
+            background: #f5f5f5;
+
+            color: #222;
+        }
+
+        h2,
+        h3 {
+            margin-top: 0;
         }
 
         input,
         textarea,
         select {
             width: 100%;
-            max-width: 500px;
-            box-sizing: border-box;
-            padding: 8px;
+
+            padding: 10px;
+
             margin-top: 5px;
+
+            border: 1px solid #ccc;
+
+            border-radius: 6px;
+
+            font-size: 15px;
+
+            font-family: inherit;
         }
 
         textarea {
             min-height: 100px;
+
             resize: vertical;
         }
 
         button {
-            padding: 8px 14px;
+            padding: 9px 15px;
+
             margin: 5px 5px 5px 0;
+
             cursor: pointer;
+
+            border: 1px solid #bbb;
+
+            border-radius: 6px;
+
+            background: #fff;
+
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #eee;
+        }
+
+        .primary-button {
+            background: #222;
+
+            color: white;
+
+            border-color: #222;
+        }
+
+        .primary-button:hover {
+            background: #444;
+        }
+
+        .danger-button {
+            background: #d32f2f;
+
+            color: white;
+
+            border-color: #d32f2f;
+        }
+
+        .danger-button:hover {
+            background: #b71c1c;
         }
 
         .event {
-            border: 1px solid #ccc;
-            padding: 15px;
+            border: 1px solid #ddd;
+
+            padding: 18px;
+
             margin: 15px 0;
-            border-radius: 8px;
+
+            border-radius: 10px;
+
+            background: white;
+
+            box-shadow:
+                0 2px 8px
+                rgba(0, 0, 0, 0.05);
         }
 
         .event h3 {
             margin-top: 0;
+
+            margin-bottom: 12px;
+        }
+
+        .event p {
+            margin: 7px 0;
+
+            line-height: 1.45;
+
+            overflow-wrap: anywhere;
+        }
+
+        .event-image {
+            max-width: 250px;
+
+            max-height: 180px;
+
+            object-fit: contain;
+
+            border-radius: 8px;
+
+            margin: 10px 0;
+        }
+
+        .status {
+            display: inline-block;
+
+            padding: 4px 9px;
+
+            border-radius: 15px;
+
+            background: #eee;
+
+            font-weight: bold;
+
+            font-size: 13px;
+        }
+
+        .status-approved {
+            background: #dff5e1;
+
+            color: #20752b;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+
+            color: #856404;
+        }
+
+        .status-rejected {
+            background: #ffe0e0;
+
+            color: #b00000;
+        }
+
+        .status-end {
+            background: #e5e5e5;
+
+            color: #555;
+        }
+
+        .tags {
+            margin-top: 10px;
+        }
+
+        .tag {
+            display: inline-block;
+
+            padding: 5px 9px;
+
+            margin: 3px 4px 3px 0;
+
+            border-radius: 6px;
+
+            background: #eee;
+
+            font-size: 13px;
+        }
+
+        .tag-age {
+            background: #ffe0e0;
+
+            color: #b00000;
+        }
+
+        .tag-warning {
+            background: #fff3cd;
+
+            color: #856404;
         }
 
         .form {
-            border: 1px solid #ccc;
+            border: 1px solid #ddd;
+
             padding: 20px;
+
             margin: 20px 0;
-            border-radius: 8px;
+
+            border-radius: 10px;
+
+            background: white;
         }
 
         .field {
             margin-bottom: 15px;
+        }
+
+        .field label {
+            font-weight: bold;
+        }
+
+        .field small {
+            display: block;
+
+            margin-top: 4px;
+
+            color: #777;
         }
 
         .hidden {
@@ -66,17 +248,92 @@
         }
 
         .error {
-            color: red;
+            color: #b00000;
+
+            padding: 10px;
+
+            background: #ffeaea;
+
+            border-radius: 6px;
         }
 
         .success {
-            color: green;
+            color: #20752b;
+
+            padding: 10px;
+
+            background: #e5f7e7;
+
+            border-radius: 6px;
+        }
+
+        .login-block {
+            max-width: 500px;
+
+            margin: 80px auto;
+        }
+
+        .admin-header {
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            flex-wrap: wrap;
+
+            gap: 10px;
+
+            margin-bottom: 20px;
+        }
+
+        .admin-buttons {
+            display: flex;
+
+            flex-wrap: wrap;
+        }
+
+        .separator {
+            border: 0;
+
+            border-top: 1px solid #ddd;
+
+            margin: 20px 0;
+        }
+
+        .event-actions {
+            margin-top: 15px;
+
+            padding-top: 10px;
+
+            border-top: 1px solid #eee;
+        }
+
+        .url {
+            word-break: break-all;
+
+            color: #555;
+        }
+
+        @media (max-width: 600px) {
+
+            body {
+                margin: 20px auto;
+
+                padding: 0 10px;
+            }
+
+            .admin-header {
+                align-items: flex-start;
+
+                flex-direction: column;
+            }
+
         }
 
     </style>
 
 </head>
-
 
 <body>
 
@@ -85,53 +342,58 @@
     <!-- ВХОД -->
     <!-- ========================================= -->
 
-    <div id="loginBlock">
+    <div
+        id="loginBlock"
+        class="login-block"
+    >
 
-        <h2>
-            Вход в админку
-        </h2>
+        <div class="form">
+
+            <h2>
+                Вход в админку
+            </h2>
+
+            <div class="field">
+
+                <label>
+                    Email
+                </label>
+
+                <input
+                    id="email"
+                    type="email"
+                    placeholder="Email"
+                >
+
+            </div>
 
 
-        <div class="field">
+            <div class="field">
 
-            <label>
-                Email
-            </label>
+                <label>
+                    Пароль
+                </label>
 
-            <br>
+                <input
+                    id="password"
+                    type="password"
+                    placeholder="Пароль"
+                >
 
-            <input
-                id="email"
-                type="email"
-                placeholder="Email"
+            </div>
+
+
+            <button
+                id="login"
+                class="primary-button"
             >
+                Войти
+            </button>
+
+
+            <p id="loginResult"></p>
 
         </div>
-
-
-        <div class="field">
-
-            <label>
-                Пароль
-            </label>
-
-            <br>
-
-            <input
-                id="password"
-                type="password"
-                placeholder="Пароль"
-            >
-
-        </div>
-
-
-        <button id="login">
-            Войти
-        </button>
-
-
-        <p id="loginResult"></p>
 
     </div>
 
@@ -146,35 +408,45 @@
         class="hidden"
     >
 
+        <div class="admin-header">
 
-        <h2>
-            Админка мероприятий
-        </h2>
+            <div>
 
+                <h2>
+                    Админка «УлДвиж»
+                </h2>
 
-        <p>
-            Вы вошли в админку
-        </p>
+                <p>
+                    Управление мероприятиями
+                </p>
 
+            </div>
 
-        <button id="logout">
-            Выйти
-        </button>
+            <div class="admin-buttons">
 
+                <button id="loadEvents">
+                    🔄 Обновить
+                </button>
 
-        <button id="loadEvents">
-            Обновить мероприятия
-        </button>
+                <button
+                    id="createEventButton"
+                    class="primary-button"
+                >
+                    ➕ Создать мероприятие
+                </button>
 
+                <button id="logout">
+                    Выйти
+                </button>
 
-        <button id="createEventButton">
-            Создать мероприятие
-        </button>
+            </div>
+
+        </div>
 
 
 
         <!-- ===================================== -->
-        <!-- ФОРМА СОЗДАНИЯ / РЕДАКТИРОВАНИЯ -->
+        <!-- ФОРМА -->
         <!-- ===================================== -->
 
         <div
@@ -192,10 +464,8 @@
             <div class="field">
 
                 <label>
-                    Название
+                    Название *
                 </label>
-
-                <br>
 
                 <input
                     id="eventTitle"
@@ -206,7 +476,6 @@
             </div>
 
 
-
             <!-- Статус -->
 
             <div class="field">
@@ -215,26 +484,27 @@
                     Статус
                 </label>
 
-                <br>
-
                 <select id="eventStatus">
 
                     <option value="pending">
-                        pending
+                        pending — на модерации
                     </option>
 
                     <option value="approved">
-                        approved
+                        approved — опубликовано
                     </option>
 
                     <option value="rejected">
-                        rejected
+                        rejected — отклонено
+                    </option>
+
+                    <option value="end">
+                        end — завершено
                     </option>
 
                 </select>
 
             </div>
-
 
 
             <!-- Описание -->
@@ -245,15 +515,12 @@
                     Описание
                 </label>
 
-                <br>
-
                 <textarea
                     id="eventDescription"
                     placeholder="Описание мероприятия"
                 ></textarea>
 
             </div>
-
 
 
             <!-- Дата начала -->
@@ -264,15 +531,12 @@
                     Дата начала
                 </label>
 
-                <br>
-
                 <input
                     id="eventStartDate"
                     type="datetime-local"
                 >
 
             </div>
-
 
 
             <!-- Дата окончания -->
@@ -283,15 +547,16 @@
                     Дата окончания
                 </label>
 
-                <br>
-
                 <input
                     id="eventEndDate"
                     type="datetime-local"
                 >
 
-            </div>
+                <small>
+                    Если не указать, backend может установить дату автоматически.
+                </small>
 
+            </div>
 
 
             <!-- Цена -->
@@ -302,16 +567,14 @@
                     Цена
                 </label>
 
-                <br>
-
                 <input
                     id="eventPrice"
                     type="number"
-                    placeholder="Цена"
+                    min="0"
+                    placeholder="0"
                 >
 
             </div>
-
 
 
             <!-- Изображение -->
@@ -322,8 +585,6 @@
                     Ссылка на изображение
                 </label>
 
-                <br>
-
                 <input
                     id="eventImage"
                     type="url"
@@ -331,7 +592,6 @@
                 >
 
             </div>
-
 
 
             <!-- Ссылка на источник -->
@@ -342,8 +602,6 @@
                     Ссылка на источник
                 </label>
 
-                <br>
-
                 <input
                     id="eventSourceUrl"
                     type="url"
@@ -352,6 +610,22 @@
 
             </div>
 
+
+            <!-- Источник -->
+
+            <div class="field">
+
+                <label>
+                    Источник
+                </label>
+
+                <input
+                    id="eventSource"
+                    type="text"
+                    placeholder="Например: Ulpressa"
+                >
+
+            </div>
 
 
             <!-- Организатор -->
@@ -362,8 +636,6 @@
                     Организатор
                 </label>
 
-                <br>
-
                 <input
                     id="eventBroadcaster"
                     type="text"
@@ -373,38 +645,129 @@
             </div>
 
 
-
-            <!-- 18+ -->
+            <!-- Ссылка организатора -->
 
             <div class="field">
 
                 <label>
-
-                    <input
-                        id="event18"
-                        type="checkbox"
-                        style="width: auto;"
-                    >
-
-                    18+
-
+                    Ссылка на организатора
                 </label>
+
+                <input
+                    id="eventBroadcasterUrl"
+                    type="url"
+                    placeholder="https://..."
+                >
 
             </div>
 
 
+            <!-- Возраст -->
 
-            <!-- Кнопки формы -->
+            <div class="field">
 
-            <button id="saveEvent">
-                Сохранить
+                <label>
+                    Возрастное ограничение
+                </label>
+
+                <input
+                    id="eventAge"
+                    type="number"
+                    min="0"
+                    placeholder="Например: 16"
+                >
+
+                <small>
+                    Например: 6, 12, 16 или 18.
+                </small>
+
+            </div>
+
+
+            <!-- Тип -->
+
+            <div class="field">
+
+                <label>
+                    Тип мероприятия
+                </label>
+
+                <input
+                    id="eventType"
+                    type="text"
+                    placeholder="Концерт, выставка, лекция..."
+                >
+
+            </div>
+
+
+            <!-- Адрес -->
+
+            <div class="field">
+
+                <label>
+                    Адрес
+                </label>
+
+                <input
+                    id="eventAddress"
+                    type="text"
+                    placeholder="Место проведения"
+                >
+
+            </div>
+
+
+            <!-- External ID -->
+
+            <div class="field">
+
+                <label>
+                    Внешний ID
+                </label>
+
+                <input
+                    id="eventExternalId"
+                    type="text"
+                    placeholder="ID мероприятия во внешнем источнике"
+                >
+
+                <small>
+                    Используется для идентификации мероприятия во внешнем источнике.
+                </small>
+
+            </div>
+
+
+            <!-- Предупреждение -->
+
+            <div class="field">
+
+                <label>
+                    Предупреждение
+                </label>
+
+                <textarea
+                    id="eventWarning"
+                    placeholder="Дополнительное предупреждение для пользователя"
+                ></textarea>
+
+            </div>
+
+
+            <hr class="separator">
+
+
+            <button
+                id="saveEvent"
+                class="primary-button"
+            >
+                💾 Сохранить
             </button>
-
 
             <button id="cancelForm">
                 Отмена
             </button>
-
 
             <p id="formResult"></p>
 
@@ -413,20 +776,18 @@
 
 
         <!-- ===================================== -->
-        <!-- СПИСОК МЕРОПРИЯТИЙ -->
+        <!-- СПИСОК -->
         <!-- ===================================== -->
 
         <h3>
             Все мероприятия
         </h3>
 
-
         <div id="events">
 
             Загрузка...
 
         </div>
-
 
     </div>
 
@@ -443,19 +804,21 @@
         // SUPABASE
         // =========================================
 
-        import { createClient } from
+        import {
+            createClient
+        }
+        from
             "https://esm.sh/@supabase/supabase-js";
 
 
+        const supabase =
+            createClient(
 
-        const supabase = createClient(
+                "https://tgyqyrullvofkezmqrkj.supabase.co",
 
-            "https://tgyqyrullvofkezmqrkj.supabase.co",
+                "sb_publishable_eGu4ybXLAizBBASrAXUVqw_UnFURjBt"
 
-            "sb_publishable_eGu4ybXLAizBBASrAXUVqw_UnFURjBt"
-
-        );
-
+            );
 
 
         // =========================================
@@ -466,7 +829,6 @@
             "https://astonishing-pastelito-e6e568.netlify.app";
 
 
-
         // =========================================
         // JWT
         // =========================================
@@ -474,77 +836,111 @@
         let token = null;
 
 
-
         // ID редактируемого мероприятия
 
         let editingEventId = null;
-
 
 
         // =========================================
         // ВХОД
         // =========================================
 
-        document.getElementById("login").onclick =
-            async () => {
-
+        document
+            .getElementById("login")
+            .onclick = async () => {
 
                 const email =
-                    document.getElementById("email").value;
+                    document
+                        .getElementById("email")
+                        .value
+                        .trim();
 
 
                 const password =
-                    document.getElementById("password").value;
+                    document
+                        .getElementById("password")
+                        .value;
 
 
-
-                const { data, error } =
-                    await supabase.auth.signInWithPassword({
-
-                        email: email,
-
-                        password: password
-
-                    });
+                const result =
+                    document
+                        .getElementById("loginResult");
 
 
+                result.textContent = "";
 
-                if (error) {
 
-                    document.getElementById("loginResult")
-                        .textContent =
-                        "Ошибка: " + error.message;
+                if (!email || !password) {
+
+                    result.className = "error";
+
+                    result.textContent =
+                        "Введите email и пароль.";
 
                     return;
 
                 }
 
 
+                try {
 
-                // Получаем JWT
+                    const {
+                        data,
+                        error
+                    } =
+                        await supabase
+                            .auth
+                            .signInWithPassword({
 
-                token =
-                    data.session.access_token;
+                                email: email,
 
+                                password: password
 
-
-                // Скрываем вход
-
-                document.getElementById("loginBlock")
-                    .classList.add("hidden");
-
-
-
-                // Показываем админку
-
-                document.getElementById("adminBlock")
-                    .classList.remove("hidden");
+                            });
 
 
+                    if (error) {
 
-                // Загружаем все мероприятия
+                        result.className = "error";
 
-                loadEvents();
+                        result.textContent =
+                            "Ошибка: " +
+                            error.message;
+
+                        return;
+
+                    }
+
+
+                    token =
+                        data
+                            .session
+                            .access_token;
+
+
+                    document
+                        .getElementById("loginBlock")
+                        .classList.add("hidden");
+
+
+                    document
+                        .getElementById("adminBlock")
+                        .classList.remove("hidden");
+
+
+                    loadEvents();
+
+                }
+
+                catch (error) {
+
+                    result.className = "error";
+
+                    result.textContent =
+                        "Ошибка входа: " +
+                        error.message;
+
+                }
 
             };
 
@@ -556,23 +952,22 @@
 
         async function loadEvents() {
 
-
             const eventsBlock =
-                document.getElementById("events");
+                document
+                    .getElementById("events");
 
 
             eventsBlock.textContent =
                 "Загрузка...";
 
 
-
             try {
-
 
                 const response =
                     await fetch(
 
-                        API_URL + "/api/events",
+                        API_URL +
+                        "/api/events",
 
                         {
 
@@ -581,7 +976,8 @@
                             headers: {
 
                                 Authorization:
-                                    "Bearer " + token
+                                    "Bearer " +
+                                    token
 
                             }
 
@@ -590,45 +986,47 @@
                     );
 
 
-
                 const data =
                     await response.json();
 
 
-
-                // Ошибка backend
-
                 if (!response.ok) {
 
-                    eventsBlock.textContent =
-                        "Ошибка: " + data.error;
+                    eventsBlock.innerHTML = `
+
+                        <div class="error">
+
+                            Ошибка:
+                            ${escapeHTML(data.error || "Неизвестная ошибка")}
+
+                        </div>
+
+                    `;
 
                     return;
 
                 }
 
-
-
-                // Проверяем, что пришёл массив
 
                 if (!Array.isArray(data)) {
 
-                    eventsBlock.textContent =
-                        "Backend вернул не массив мероприятий.";
+                    eventsBlock.innerHTML = `
+
+                        <div class="error">
+
+                            Backend вернул не массив мероприятий.
+
+                        </div>
+
+                    `;
 
                     return;
 
                 }
 
 
-
-                // Очищаем список
-
                 eventsBlock.innerHTML = "";
 
-
-
-                // Если мероприятий нет
 
                 if (data.length === 0) {
 
@@ -640,25 +1038,20 @@
                 }
 
 
-
-                // Показываем количество
-
                 const count =
                     document.createElement("p");
+
 
                 count.innerHTML =
                     "<b>Всего мероприятий: " +
                     data.length +
                     "</b>";
 
+
                 eventsBlock.appendChild(count);
 
 
-
-                // Перебираем ВСЕ мероприятия
-
                 data.forEach(event => {
-
 
                     const div =
                         document.createElement("div");
@@ -668,65 +1061,312 @@
                         "event";
 
 
+                    const statusClass =
+                        getStatusClass(
+                            event.status
+                        );
+
+
+                    const age =
+                        event.age !== null &&
+                        event.age !== undefined &&
+                        event.age !== ""
+                            ? `${event.age}+`
+                            : "Не указано";
+
 
                     div.innerHTML = `
 
                         <h3>
-                            ${event.title ?? "Без названия"}
+                            ${escapeHTML(
+                                event.title ||
+                                "Без названия"
+                            )}
                         </h3>
 
+
                         <p>
+
                             <b>ID:</b>
-                            ${event.id}
+
+                            ${escapeHTML(
+                                event.id
+                            )}
+
                         </p>
 
+
                         <p>
+
                             <b>Статус:</b>
-                            ${event.status ?? ""}
+
+                            <span
+                                class="status ${statusClass}"
+                            >
+                                ${escapeHTML(
+                                    event.status || ""
+                                )}
+                            </span>
+
                         </p>
 
-                        <p>
-                            <b>Описание:</b>
-                            ${event.description ?? ""}
-                        </p>
 
                         <p>
+
+                            <b>Описание:</b><br>
+
+                            ${escapeHTML(
+                                event.description ||
+                                "Не указано"
+                            )}
+
+                        </p>
+
+
+                        <p>
+
                             <b>Дата начала:</b>
-                            ${formatDate(event.start_date)}
+
+                            ${formatDate(
+                                event.start_date
+                            )}
+
                         </p>
 
+
                         <p>
+
                             <b>Дата окончания:</b>
-                            ${formatDate(event.end_date)}
+
+                            ${formatDate(
+                                event.end_date
+                            )}
+
                         </p>
 
+
                         <p>
+
                             <b>Цена:</b>
-                            ${event.price ?? ""}
+
+                            ${
+                                event.price !== null &&
+                                event.price !== undefined
+                                    ? escapeHTML(
+                                        event.price
+                                    ) + " ₽"
+                                    : "Не указана"
+                            }
+
                         </p>
 
-                        <p>
-                            <b>Изображение:</b>
-                            ${event.image_url ?? ""}
-                        </p>
+
+                        ${
+                            event.image_url
+                                ? `
+
+                                    <p>
+
+                                        <b>Изображение:</b>
+
+                                        <br>
+
+                                        <img
+                                            class="event-image"
+                                            src="${escapeHTML(event.image_url)}"
+                                            alt="Изображение мероприятия"
+                                        >
+
+                                        <br>
+
+                                        <span class="url">
+                                            ${escapeHTML(event.image_url)}
+                                        </span>
+
+                                    </p>
+
+                                `
+                                : ""
+                        }
+
 
                         <p>
+
                             <b>Источник:</b>
-                            ${event.source_url ?? ""}
+
+                            ${
+                                event.source
+                                    ? escapeHTML(
+                                        event.source
+                                    )
+                                    : "Не указан"
+                            }
+
                         </p>
 
+
+                        ${
+                            event.source_url
+                                ? `
+
+                                    <p>
+
+                                        <b>Ссылка на источник:</b>
+
+                                        <br>
+
+                                        <a
+                                            href="${escapeHTML(event.source_url)}"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            ${escapeHTML(event.source_url)}
+                                        </a>
+
+                                    </p>
+
+                                `
+                                : ""
+                        }
+
+
                         <p>
+
                             <b>Организатор:</b>
-                            ${event.broadcaster ?? ""}
+
+                            ${
+                                event.broadcaster
+                                    ? escapeHTML(
+                                        event.broadcaster
+                                    )
+                                    : "Не указан"
+                            }
+
                         </p>
 
-                        <p>
-                            <b>18+:</b>
-                            ${event["18+"] ? "Да" : "Нет"}
-                        </p>
+
+                        ${
+                            event.broadcaster_url
+                                ? `
+
+                                    <p>
+
+                                        <b>Ссылка организатора:</b>
+
+                                        <br>
+
+                                        <a
+                                            href="${escapeHTML(event.broadcaster_url)}"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            ${escapeHTML(event.broadcaster_url)}
+                                        </a>
+
+                                    </p>
+
+                                `
+                                : ""
+                        }
+
+
+                        <div class="tags">
+
+                            <span class="tag tag-age">
+
+                                🔞 Возраст:
+                                ${escapeHTML(age)}
+
+                            </span>
+
+
+                            ${
+                                event.type
+                                    ? `
+
+                                        <span class="tag">
+
+                                            🎭
+                                            ${escapeHTML(
+                                                event.type
+                                            )}
+
+                                        </span>
+
+                                    `
+                                    : ""
+                            }
+
+
+                            ${
+                                event.address
+                                    ? `
+
+                                        <span class="tag">
+
+                                            📍
+                                            ${escapeHTML(
+                                                event.address
+                                            )}
+
+                                        </span>
+
+                                    `
+                                    : ""
+                            }
+
+                        </div>
+
+
+                        ${
+                            event.external_id
+                                ? `
+
+                                    <p>
+
+                                        <b>Внешний ID:</b>
+
+                                        ${escapeHTML(
+                                            event.external_id
+                                        )}
+
+                                    </p>
+
+                                `
+                                : ""
+                        }
+
+
+                        ${
+                            event.warning
+                                ? `
+
+                                    <p>
+
+                                        <span
+                                            class="tag tag-warning"
+                                        >
+
+                                            ⚠️ Предупреждение:
+
+                                            ${escapeHTML(
+                                                event.warning
+                                            )}
+
+                                        </span>
+
+                                    </p>
+
+                                `
+                                : ""
+                        }
+
+
+                        <div class="event-actions">
+
+                        </div>
 
                     `;
-
 
 
                     // =================================
@@ -734,16 +1374,17 @@
                     // =================================
 
                     const editButton =
-                        document.createElement("button");
+                        document.createElement(
+                            "button"
+                        );
 
 
                     editButton.textContent =
-                        "Изменить";
+                        "✏️ Изменить";
 
 
                     editButton.onclick =
                         () => editEvent(event);
-
 
 
                     // =================================
@@ -751,33 +1392,64 @@
                     // =================================
 
                     const deleteButton =
-                        document.createElement("button");
+                        document.createElement(
+                            "button"
+                        );
 
 
                     deleteButton.textContent =
-                        "Удалить";
+                        "🗑️ Удалить";
+
+
+                    deleteButton.className =
+                        "danger-button";
 
 
                     deleteButton.onclick =
-                        () => deleteEvent(event.id);
+                        () =>
+                            deleteEvent(
+                                event.id
+                            );
 
 
+                    const actions =
+                        div.querySelector(
+                            ".event-actions"
+                        );
 
-                    div.appendChild(editButton);
 
-                    div.appendChild(deleteButton);
+                    actions.appendChild(
+                        editButton
+                    );
+
+                    actions.appendChild(
+                        deleteButton
+                    );
 
 
-                    eventsBlock.appendChild(div);
+                    eventsBlock.appendChild(
+                        div
+                    );
 
                 });
 
+            }
 
-            } catch (error) {
+            catch (error) {
 
-                eventsBlock.textContent =
-                    "Ошибка соединения с backend: " +
-                    error.message;
+                eventsBlock.innerHTML = `
+
+                    <div class="error">
+
+                        Ошибка соединения с backend:
+
+                        ${escapeHTML(
+                            error.message
+                        )}
+
+                    </div>
+
+                `;
 
             }
 
@@ -786,39 +1458,137 @@
 
 
         // =========================================
-        // ФОРМАТИРОВАНИЕ ДАТЫ
+        // ЭКРАНИРОВАНИЕ HTML
         // =========================================
 
-        function formatDate(date) {
+        function escapeHTML(value) {
 
-
-            if (!date) {
+            if (
+                value === null ||
+                value === undefined
+            ) {
 
                 return "";
 
             }
 
 
-            return new Date(date)
-                .toLocaleString("ru-RU");
+            return String(value)
+
+                .replace(
+                    /&/g,
+                    "&amp;"
+                )
+
+                .replace(
+                    /</g,
+                    "&lt;"
+                )
+
+                .replace(
+                    />/g,
+                    "&gt;"
+                )
+
+                .replace(
+                    /"/g,
+                    "&quot;"
+                )
+
+                .replace(
+                    /'/g,
+                    "&#039;"
+                );
 
         }
 
 
 
         // =========================================
-        // ОТКРЫТЬ ФОРМУ СОЗДАНИЯ
+        // СТАТУС
         // =========================================
 
-        document.getElementById("createEventButton")
-            .onclick =
-            () => {
+        function getStatusClass(status) {
 
+            if (status === "approved") {
+
+                return "status-approved";
+
+            }
+
+            if (status === "pending") {
+
+                return "status-pending";
+
+            }
+
+            if (status === "rejected") {
+
+                return "status-rejected";
+
+            }
+
+            if (status === "end") {
+
+                return "status-end";
+
+            }
+
+            return "";
+
+        }
+
+
+
+        // =========================================
+        // ФОРМАТ ДАТЫ
+        // =========================================
+
+        function formatDate(date) {
+
+            if (!date) {
+
+                return "Не указана";
+
+            }
+
+
+            const parsed =
+                new Date(date);
+
+
+            if (
+                isNaN(
+                    parsed.getTime()
+                )
+            ) {
+
+                return "Некорректная дата";
+
+            }
+
+
+            return parsed.toLocaleString(
+                "ru-RU"
+            );
+
+        }
+
+
+
+        // =========================================
+        // СОЗДАНИЕ
+        // =========================================
+
+        document
+            .getElementById("createEventButton")
+            .onclick = () => {
 
                 editingEventId = null;
 
 
-                document.getElementById("formTitle")
+                document
+                    .getElementById("formTitle")
                     .textContent =
                     "Создать мероприятие";
 
@@ -826,99 +1596,146 @@
                 clearForm();
 
 
-                document.getElementById("eventForm")
-                    .classList.remove("hidden");
+                document
+                    .getElementById("eventForm")
+                    .classList
+                    .remove("hidden");
+
+
+                document
+                    .getElementById("eventForm")
+                    .scrollIntoView({
+                        behavior: "smooth"
+                    });
 
             };
 
 
 
         // =========================================
-        // ОТКРЫТЬ ФОРМУ РЕДАКТИРОВАНИЯ
+        // РЕДАКТИРОВАНИЕ
         // =========================================
 
         function editEvent(event) {
-
 
             editingEventId =
                 event.id;
 
 
-
-            document.getElementById("formTitle")
+            document
+                .getElementById("formTitle")
                 .textContent =
                 "Изменить мероприятие";
 
 
-
-            document.getElementById("eventTitle")
+            document
+                .getElementById("eventTitle")
                 .value =
                 event.title ?? "";
 
 
-
-            document.getElementById("eventStatus")
+            document
+                .getElementById("eventStatus")
                 .value =
                 event.status ?? "pending";
 
 
-
-            document.getElementById("eventDescription")
+            document
+                .getElementById("eventDescription")
                 .value =
                 event.description ?? "";
 
 
-
-            document.getElementById("eventStartDate")
+            document
+                .getElementById("eventStartDate")
                 .value =
-                toDateInput(event.start_date);
+                toDateInput(
+                    event.start_date
+                );
 
 
-
-            document.getElementById("eventEndDate")
+            document
+                .getElementById("eventEndDate")
                 .value =
-                toDateInput(event.end_date);
+                toDateInput(
+                    event.end_date
+                );
 
 
-
-            document.getElementById("eventPrice")
+            document
+                .getElementById("eventPrice")
                 .value =
                 event.price ?? "";
 
 
-
-            document.getElementById("eventImage")
+            document
+                .getElementById("eventImage")
                 .value =
                 event.image_url ?? "";
 
 
-
-            document.getElementById("eventSourceUrl")
+            document
+                .getElementById("eventSourceUrl")
                 .value =
                 event.source_url ?? "";
 
 
+            document
+                .getElementById("eventSource")
+                .value =
+                event.source ?? "";
 
-            document.getElementById("eventBroadcaster")
+
+            document
+                .getElementById("eventBroadcaster")
                 .value =
                 event.broadcaster ?? "";
 
 
-
-            document.getElementById("event18")
-                .checked =
-                event["18+"] === true;
-
-
-
-            document.getElementById("eventForm")
-                .classList.remove("hidden");
+            document
+                .getElementById("eventBroadcasterUrl")
+                .value =
+                event.broadcaster_url ?? "";
 
 
+            document
+                .getElementById("eventAge")
+                .value =
+                event.age ?? "";
 
-            // Перемещаем страницу к форме
 
-            document.getElementById("eventForm")
+            document
+                .getElementById("eventType")
+                .value =
+                event.type ?? "";
+
+
+            document
+                .getElementById("eventAddress")
+                .value =
+                event.address ?? "";
+
+
+            document
+                .getElementById("eventExternalId")
+                .value =
+                event.external_id ?? "";
+
+
+            document
+                .getElementById("eventWarning")
+                .value =
+                event.warning ?? "";
+
+
+            document
+                .getElementById("eventForm")
+                .classList
+                .remove("hidden");
+
+
+            document
+                .getElementById("eventForm")
                 .scrollIntoView({
                     behavior: "smooth"
                 });
@@ -928,11 +1745,10 @@
 
 
         // =========================================
-        // ПРЕОБРАЗОВАНИЕ ДАТЫ
+        // ДАТА ДЛЯ INPUT
         // =========================================
 
         function toDateInput(date) {
-
 
             if (!date) {
 
@@ -941,10 +1757,19 @@
             }
 
 
-
             const d =
                 new Date(date);
 
+
+            if (
+                isNaN(
+                    d.getTime()
+                )
+            ) {
+
+                return "";
+
+            }
 
 
             const year =
@@ -952,24 +1777,31 @@
 
 
             const month =
-                String(d.getMonth() + 1)
+                String(
+                    d.getMonth() + 1
+                )
                     .padStart(2, "0");
 
 
             const day =
-                String(d.getDate())
+                String(
+                    d.getDate()
+                )
                     .padStart(2, "0");
 
 
             const hours =
-                String(d.getHours())
+                String(
+                    d.getHours()
+                )
                     .padStart(2, "0");
 
 
             const minutes =
-                String(d.getMinutes())
+                String(
+                    d.getMinutes()
+                )
                     .padStart(2, "0");
-
 
 
             return (
@@ -994,59 +1826,95 @@
 
         function clearForm() {
 
-
-            document.getElementById("eventTitle")
+            document
+                .getElementById("eventTitle")
                 .value = "";
 
 
+            document
+                .getElementById("eventStatus")
+                .value =
+                "pending";
 
-            document.getElementById("eventStatus")
-                .value = "pending";
 
-
-
-            document.getElementById("eventDescription")
+            document
+                .getElementById("eventDescription")
                 .value = "";
 
 
-
-            document.getElementById("eventStartDate")
+            document
+                .getElementById("eventStartDate")
                 .value = "";
 
 
-
-            document.getElementById("eventEndDate")
+            document
+                .getElementById("eventEndDate")
                 .value = "";
 
 
-
-            document.getElementById("eventPrice")
+            document
+                .getElementById("eventPrice")
                 .value = "";
 
 
-
-            document.getElementById("eventImage")
+            document
+                .getElementById("eventImage")
                 .value = "";
 
 
-
-            document.getElementById("eventSourceUrl")
+            document
+                .getElementById("eventSourceUrl")
                 .value = "";
 
 
-
-            document.getElementById("eventBroadcaster")
+            document
+                .getElementById("eventSource")
                 .value = "";
 
 
+            document
+                .getElementById("eventBroadcaster")
+                .value = "";
 
-            document.getElementById("event18")
-                .checked = false;
+
+            document
+                .getElementById("eventBroadcasterUrl")
+                .value = "";
 
 
+            document
+                .getElementById("eventAge")
+                .value = "";
 
-            document.getElementById("formResult")
-                .textContent = "";
+
+            document
+                .getElementById("eventType")
+                .value = "";
+
+
+            document
+                .getElementById("eventAddress")
+                .value = "";
+
+
+            document
+                .getElementById("eventExternalId")
+                .value = "";
+
+
+            document
+                .getElementById("eventWarning")
+                .value = "";
+
+
+            const result =
+                document
+                    .getElementById("formResult");
+
+
+            result.textContent = "";
+
+            result.className = "";
 
         }
 
@@ -1056,196 +1924,274 @@
         // СОХРАНЕНИЕ
         // =========================================
 
-        document.getElementById("saveEvent")
-            .onclick =
-            async () => {
-
+        document
+            .getElementById("saveEvent")
+            .onclick = async () => {
 
                 const eventData = {
 
-
                     title:
-                        document.getElementById("eventTitle")
-                            .value,
-
+                        document
+                            .getElementById("eventTitle")
+                            .value
+                            .trim(),
 
                     status:
-                        document.getElementById("eventStatus")
+                        document
+                            .getElementById("eventStatus")
                             .value,
-
 
                     description:
-                        document.getElementById("eventDescription")
-                            .value,
-
+                        document
+                            .getElementById("eventDescription")
+                            .value
+                            .trim(),
 
                     start_date:
-                        getDateValue("eventStartDate"),
-
+                        getDateValue(
+                            "eventStartDate"
+                        ),
 
                     end_date:
-                        getDateValue("eventEndDate"),
-
-
-                    price:
-                        getPriceValue(),
-
+                        getDateValue(
+                            "eventEndDate"
+                        ),
 
                     image_url:
-                        document.getElementById("eventImage")
-                            .value,
+                        document
+                            .getElementById("eventImage")
+                            .value
+                            .trim(),
 
+                    price:
+                        getNumberValue(
+                            "eventPrice"
+                        ),
 
                     source_url:
-                        document.getElementById("eventSourceUrl")
-                            .value,
-
+                        document
+                            .getElementById("eventSourceUrl")
+                            .value
+                            .trim(),
 
                     broadcaster:
-                        document.getElementById("eventBroadcaster")
-                            .value,
+                        document
+                            .getElementById("eventBroadcaster")
+                            .value
+                            .trim(),
 
+                    source:
+                        document
+                            .getElementById("eventSource")
+                            .value
+                            .trim(),
 
-                    "18+":
-                        document.getElementById("event18")
-                            .checked
+                    broadcaster_url:
+                        document
+                            .getElementById("eventBroadcasterUrl")
+                            .value
+                            .trim(),
+
+                    age:
+                        getNumberValue(
+                            "eventAge"
+                        ),
+
+                    type:
+                        document
+                            .getElementById("eventType")
+                            .value
+                            .trim(),
+
+                    address:
+                        document
+                            .getElementById("eventAddress")
+                            .value
+                            .trim(),
+
+                    external_id:
+                        document
+                            .getElementById("eventExternalId")
+                            .value
+                            .trim(),
+
+                    warning:
+                        document
+                            .getElementById("eventWarning")
+                            .value
+                            .trim()
 
                 };
 
 
-
-                // =================================
-                // СОЗДАНИЕ
-                // =================================
-
-                if (editingEventId === null) {
+                const result =
+                    document
+                        .getElementById("formResult");
 
 
-                    const response =
-                        await fetch(
+                result.textContent =
+                    "Сохранение...";
 
-                            API_URL + "/api/events",
-
-                            {
-
-                                method: "POST",
-
-                                headers: {
-
-                                    "Content-Type":
-                                        "application/json",
-
-                                    Authorization:
-                                        "Bearer " + token
-
-                                },
-
-                                body:
-                                    JSON.stringify(eventData)
-
-                            }
-
-                        );
+                result.className = "";
 
 
 
-                    const data =
-                        await response.json();
+                try {
 
 
+                    // =================================
+                    // СОЗДАНИЕ
+                    // =================================
 
-                    if (!response.ok) {
+                    if (
+                        editingEventId === null
+                    ) {
 
-                        document.getElementById("formResult")
-                            .textContent =
-                            "Ошибка: " + data.error;
+                        const response =
+                            await fetch(
 
-                        return;
+                                API_URL +
+                                "/api/events",
 
-                    }
+                                {
 
+                                    method: "POST",
 
+                                    headers: {
 
-                    document.getElementById("formResult")
-                        .textContent =
-                        "Мероприятие создано!";
+                                        "Content-Type":
+                                            "application/json",
 
-                }
+                                        Authorization:
+                                            "Bearer " +
+                                            token
 
+                                    },
 
+                                    body:
+                                        JSON.stringify(
+                                            eventData
+                                        )
 
-                // =================================
-                // РЕДАКТИРОВАНИЕ
-                // =================================
+                                }
 
-                else {
-
-
-                    const response =
-                        await fetch(
-
-                            API_URL +
-                            "/api/events/" +
-                            editingEventId,
-
-                            {
-
-                                method: "PUT",
-
-                                headers: {
-
-                                    "Content-Type":
-                                        "application/json",
-
-                                    Authorization:
-                                        "Bearer " + token
-
-                                },
-
-                                body:
-                                    JSON.stringify(eventData)
-
-                            }
-
-                        );
+                            );
 
 
-
-                    const data =
-                        await response.json();
-
+                        const data =
+                            await response.json();
 
 
-                    if (!response.ok) {
+                        if (!response.ok) {
 
-                        document.getElementById("formResult")
-                            .textContent =
-                            "Ошибка: " + data.error;
+                            throw new Error(
+                                data.error ||
+                                "Ошибка создания"
+                            );
 
-                        return;
+                        }
+
+
+                        result.textContent =
+                            "Мероприятие создано!";
+
+                        result.className =
+                            "success";
 
                     }
 
 
+                    // =================================
+                    // РЕДАКТИРОВАНИЕ
+                    // =================================
 
-                    document.getElementById("formResult")
-                        .textContent =
-                        "Мероприятие изменено!";
+                    else {
+
+                        const response =
+                            await fetch(
+
+                                API_URL +
+                                "/api/events/" +
+                                editingEventId,
+
+                                {
+
+                                    method: "PUT",
+
+                                    headers: {
+
+                                        "Content-Type":
+                                            "application/json",
+
+                                        Authorization:
+                                            "Bearer " +
+                                            token
+
+                                    },
+
+                                    body:
+                                        JSON.stringify(
+                                            eventData
+                                        )
+
+                                }
+
+                            );
+
+
+                        const data =
+                            await response.json();
+
+
+                        if (!response.ok) {
+
+                            throw new Error(
+                                data.error ||
+                                "Ошибка изменения"
+                            );
+
+                        }
+
+
+                        result.textContent =
+                            "Мероприятие изменено!";
+
+                        result.className =
+                            "success";
+
+                    }
+
+
+                    await loadEvents();
+
+
+                    setTimeout(
+                        () => {
+
+                            document
+                                .getElementById("eventForm")
+                                .classList
+                                .add("hidden");
+
+                        },
+                        500
+                    );
+
+
+                    editingEventId = null;
 
                 }
 
+                catch (error) {
 
+                    result.textContent =
+                        "Ошибка: " +
+                        error.message;
 
-                // Обновляем список
+                    result.className =
+                        "error";
 
-                await loadEvents();
-
-
-
-                // Закрываем форму
-
-                document.getElementById("eventForm")
-                    .classList.add("hidden");
+                }
 
             };
 
@@ -1257,10 +2203,10 @@
 
         function getDateValue(id) {
 
-
             const value =
-                document.getElementById(id).value;
-
+                document
+                    .getElementById(id)
+                    .value;
 
 
             if (!value) {
@@ -1270,25 +2216,24 @@
             }
 
 
-
-            return new Date(value)
-                .toISOString();
+            return new Date(
+                value
+            ).toISOString();
 
         }
 
 
 
         // =========================================
-        // ПОЛУЧЕНИЕ ЦЕНЫ
+        // ЧИСЛОВОЕ ЗНАЧЕНИЕ
         // =========================================
 
-        function getPriceValue() {
-
+        function getNumberValue(id) {
 
             const value =
-                document.getElementById("eventPrice")
+                document
+                    .getElementById(id)
                     .value;
-
 
 
             if (value === "") {
@@ -1298,24 +2243,37 @@
             }
 
 
+            const number =
+                Number(value);
 
-            return Number(value);
+
+            if (
+                !Number.isFinite(number)
+            ) {
+
+                return null;
+
+            }
+
+
+            return number;
 
         }
 
 
 
         // =========================================
-        // ОТМЕНА ФОРМЫ
+        // ОТМЕНА
         // =========================================
 
-        document.getElementById("cancelForm")
-            .onclick =
-            () => {
+        document
+            .getElementById("cancelForm")
+            .onclick = () => {
 
-
-                document.getElementById("eventForm")
-                    .classList.add("hidden");
+                document
+                    .getElementById("eventForm")
+                    .classList
+                    .add("hidden");
 
 
                 editingEventId = null;
@@ -1330,12 +2288,10 @@
 
         async function deleteEvent(id) {
 
-
             const confirmed =
                 confirm(
                     "Удалить мероприятие?"
                 );
-
 
 
             if (!confirmed) {
@@ -1345,51 +2301,58 @@
             }
 
 
+            try {
 
-            const response =
-                await fetch(
+                const response =
+                    await fetch(
 
-                    API_URL +
-                    "/api/events/" +
-                    id,
+                        API_URL +
+                        "/api/events/" +
+                        id,
 
-                    {
+                        {
 
-                        method: "DELETE",
+                            method: "DELETE",
 
-                        headers: {
+                            headers: {
 
-                            Authorization:
-                                "Bearer " + token
+                                Authorization:
+                                    "Bearer " +
+                                    token
+
+                            }
 
                         }
 
-                    }
-
-                );
+                    );
 
 
-
-            const data =
-                await response.json();
-
+                const data =
+                    await response.json();
 
 
-            if (!response.ok) {
+                if (!response.ok) {
 
-                alert(
-                    "Ошибка: " + data.error
-                );
+                    throw new Error(
+                        data.error ||
+                        "Ошибка удаления"
+                    );
 
-                return;
+                }
+
+
+                await loadEvents();
 
             }
 
+            catch (error) {
 
+                alert(
+                    "Ошибка: " +
+                    error.message
+                );
 
-            // Обновляем список
-
-            loadEvents();
+            }
 
         }
 
@@ -1399,7 +2362,8 @@
         // ОБНОВИТЬ
         // =========================================
 
-        document.getElementById("loadEvents")
+        document
+            .getElementById("loadEvents")
             .onclick =
             () => loadEvents();
 
@@ -1409,46 +2373,46 @@
         // ВЫХОД
         // =========================================
 
-        document.getElementById("logout")
-            .onclick =
-            async () => {
+        document
+            .getElementById("logout")
+            .onclick = async () => {
 
-
-                await supabase.auth.signOut();
-
+                await supabase
+                    .auth
+                    .signOut();
 
 
                 token = null;
 
-
-
                 editingEventId = null;
 
 
-
-                document.getElementById("loginBlock")
-                    .classList.remove("hidden");
-
-
-
-                document.getElementById("adminBlock")
-                    .classList.add("hidden");
+                document
+                    .getElementById("loginBlock")
+                    .classList
+                    .remove("hidden");
 
 
+                document
+                    .getElementById("adminBlock")
+                    .classList
+                    .add("hidden");
 
-                document.getElementById("events")
+
+                document
+                    .getElementById("events")
                     .innerHTML = "";
 
 
-
-                document.getElementById("eventForm")
-                    .classList.add("hidden");
+                document
+                    .getElementById("eventForm")
+                    .classList
+                    .add("hidden");
 
             };
 
 
     </script>
-
 
 </body>
 
