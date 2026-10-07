@@ -878,7 +878,7 @@ def parse_event(
         # ------------------------------
 
         "source_url":
-            ticket_url,
+            "https://t.me/ul_standup",
 
         "source":
             "standupclub",
@@ -891,7 +891,7 @@ def parse_event(
             "Stand Up клуб. Ульяновск.",
 
         "broadcaster_url":
-            SOURCE_URL,
+            ticket_url,
 
         # ------------------------------
         # Возраст
@@ -919,7 +919,10 @@ def parse_event(
         # ------------------------------
 
         "external_id":
-            external_id
+            external_id,
+        
+        "warring":
+            "Проверьте источник! Мероприятие может быть отменено"
     }
 
     return event
