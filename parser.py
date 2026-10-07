@@ -923,6 +923,13 @@ def parse_event(
         
         "warning":
             "Проверьте источник! Мероприятие может быть отменено"
+        
+        "source2":
+            "standupclubulsk",
+        
+        "source2_url ":
+            "https://standupclubulsk.ru/"
+        
     }
 
     return event
