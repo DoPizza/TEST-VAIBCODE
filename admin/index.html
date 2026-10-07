@@ -215,6 +215,12 @@
             color: #856404;
         }
 
+        .tag-source {
+            background: #e8eefc;
+
+            color: #304f9b;
+        }
+
         .form {
             border: 1px solid #ddd;
 
@@ -313,6 +319,22 @@
             word-break: break-all;
 
             color: #555;
+        }
+
+        .source-block {
+            padding: 10px;
+
+            margin-top: 10px;
+
+            border-radius: 7px;
+
+            background: #f7f7f7;
+
+            border: 1px solid #eee;
+        }
+
+        .source-block a {
+            word-break: break-all;
         }
 
         @media (max-width: 600px) {
@@ -553,7 +575,7 @@
                 >
 
                 <small>
-                    Если не указать, backend может установить дату автоматически.
+                    Если оставить пустым, backend/триггер может установить дату автоматически.
                 </small>
 
             </div>
@@ -594,23 +616,6 @@
             </div>
 
 
-            <!-- Ссылка на источник -->
-
-            <div class="field">
-
-                <label>
-                    Ссылка на источник
-                </label>
-
-                <input
-                    id="eventSourceUrl"
-                    type="url"
-                    placeholder="https://..."
-                >
-
-            </div>
-
-
             <!-- Источник -->
 
             <div class="field">
@@ -622,7 +627,24 @@
                 <input
                     id="eventSource"
                     type="text"
-                    placeholder="Например: Ulpressa"
+                    placeholder="Например: standupclub"
+                >
+
+            </div>
+
+
+            <!-- Ссылка источника -->
+
+            <div class="field">
+
+                <label>
+                    Ссылка на источник
+                </label>
+
+                <input
+                    id="eventSourceUrl"
+                    type="url"
+                    placeholder="https://..."
                 >
 
             </div>
@@ -758,6 +780,48 @@
             <hr class="separator">
 
 
+            <h3>
+                Дополнительный источник
+            </h3>
+
+
+            <!-- Второй источник -->
+
+            <div class="field">
+
+                <label>
+                    Название дополнительного источника
+                </label>
+
+                <input
+                    id="eventSource2"
+                    type="text"
+                    placeholder="Например: standupclubulsk"
+                >
+
+            </div>
+
+
+            <!-- Ссылка второго источника -->
+
+            <div class="field">
+
+                <label>
+                    Ссылка дополнительного источника
+                </label>
+
+                <input
+                    id="eventSource2Url"
+                    type="url"
+                    placeholder="https://..."
+                >
+
+            </div>
+
+
+            <hr class="separator">
+
+
             <button
                 id="saveEvent"
                 class="primary-button"
@@ -841,6 +905,7 @@
         let editingEventId = null;
 
 
+
         // =========================================
         // ВХОД
         // =========================================
@@ -912,6 +977,22 @@
                     }
 
 
+                    if (
+                        !data ||
+                        !data.session ||
+                        !data.session.access_token
+                    ) {
+
+                        result.className = "error";
+
+                        result.textContent =
+                            "Не удалось получить токен авторизации.";
+
+                        return;
+
+                    }
+
+
                     token =
                         data
                             .session
@@ -928,7 +1009,7 @@
                         .classList.remove("hidden");
 
 
-                    loadEvents();
+                    await loadEvents();
 
                 }
 
@@ -987,23 +1068,15 @@
 
 
                 const data =
-                    await response.json();
+                    await readJSON(response);
 
 
                 if (!response.ok) {
 
-                    eventsBlock.innerHTML = `
-
-                        <div class="error">
-
-                            Ошибка:
-                            ${escapeHTML(data.error || "Неизвестная ошибка")}
-
-                        </div>
-
-                    `;
-
-                    return;
+                    throw new Error(
+                        data?.error ||
+                        `HTTP ${response.status}`
+                    );
 
                 }
 
@@ -1023,6 +1096,33 @@
                     return;
 
                 }
+
+
+                // Сначала ближайшие мероприятия
+
+                data.sort(
+                    (a, b) => {
+
+                        const dateA =
+                            a.start_date
+                                ? new Date(
+                                    a.start_date
+                                ).getTime()
+                                : Infinity;
+
+
+                        const dateB =
+                            b.start_date
+                                ? new Date(
+                                    b.start_date
+                                ).getTime()
+                                : Infinity;
+
+
+                        return dateA - dateB;
+
+                    }
+                );
 
 
                 eventsBlock.innerHTML = "";
@@ -1048,400 +1148,497 @@
                     "</b>";
 
 
-                eventsBlock.appendChild(count);
+                eventsBlock.appendChild(
+                    count
+                );
 
 
-                data.forEach(event => {
+                data.forEach(
+                    event => {
 
-                    const div =
-                        document.createElement("div");
-
-
-                    div.className =
-                        "event";
-
-
-                    const statusClass =
-                        getStatusClass(
-                            event.status
-                        );
-
-
-                    const age =
-                        event.age !== null &&
-                        event.age !== undefined &&
-                        event.age !== ""
-                            ? `${event.age}+`
-                            : "Не указано";
-
-
-                    div.innerHTML = `
-
-                        <h3>
-                            ${escapeHTML(
-                                event.title ||
-                                "Без названия"
-                            )}
-                        </h3>
-
-
-                        <p>
-
-                            <b>ID:</b>
-
-                            ${escapeHTML(
-                                event.id
-                            )}
-
-                        </p>
-
-
-                        <p>
-
-                            <b>Статус:</b>
-
-                            <span
-                                class="status ${statusClass}"
-                            >
-                                ${escapeHTML(
-                                    event.status || ""
-                                )}
-                            </span>
-
-                        </p>
-
-
-                        <p>
-
-                            <b>Описание:</b><br>
-
-                            ${escapeHTML(
-                                event.description ||
-                                "Не указано"
-                            )}
-
-                        </p>
-
-
-                        <p>
-
-                            <b>Дата начала:</b>
-
-                            ${formatDate(
-                                event.start_date
-                            )}
-
-                        </p>
-
-
-                        <p>
-
-                            <b>Дата окончания:</b>
-
-                            ${formatDate(
-                                event.end_date
-                            )}
-
-                        </p>
-
-
-                        <p>
-
-                            <b>Цена:</b>
-
-                            ${
-                                event.price !== null &&
-                                event.price !== undefined
-                                    ? escapeHTML(
-                                        event.price
-                                    ) + " ₽"
-                                    : "Не указана"
-                            }
-
-                        </p>
-
-
-                        ${
-                            event.image_url
-                                ? `
-
-                                    <p>
-
-                                        <b>Изображение:</b>
-
-                                        <br>
-
-                                        <img
-                                            class="event-image"
-                                            src="${escapeHTML(event.image_url)}"
-                                            alt="Изображение мероприятия"
-                                        >
-
-                                        <br>
-
-                                        <span class="url">
-                                            ${escapeHTML(event.image_url)}
-                                        </span>
-
-                                    </p>
-
-                                `
-                                : ""
-                        }
-
-
-                        <p>
-
-                            <b>Источник:</b>
-
-                            ${
-                                event.source
-                                    ? escapeHTML(
-                                        event.source
-                                    )
-                                    : "Не указан"
-                            }
-
-                        </p>
-
-
-                        ${
-                            event.source_url
-                                ? `
-
-                                    <p>
-
-                                        <b>Ссылка на источник:</b>
-
-                                        <br>
-
-                                        <a
-                                            href="${escapeHTML(event.source_url)}"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                        >
-                                            ${escapeHTML(event.source_url)}
-                                        </a>
-
-                                    </p>
-
-                                `
-                                : ""
-                        }
-
-
-                        <p>
-
-                            <b>Организатор:</b>
-
-                            ${
-                                event.broadcaster
-                                    ? escapeHTML(
-                                        event.broadcaster
-                                    )
-                                    : "Не указан"
-                            }
-
-                        </p>
-
-
-                        ${
-                            event.broadcaster_url
-                                ? `
-
-                                    <p>
-
-                                        <b>Ссылка организатора:</b>
-
-                                        <br>
-
-                                        <a
-                                            href="${escapeHTML(event.broadcaster_url)}"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                        >
-                                            ${escapeHTML(event.broadcaster_url)}
-                                        </a>
-
-                                    </p>
-
-                                `
-                                : ""
-                        }
-
-
-                        <div class="tags">
-
-                            <span class="tag tag-age">
-
-                                🔞 Возраст:
-                                ${escapeHTML(age)}
-
-                            </span>
-
-
-                            ${
-                                event.type
-                                    ? `
-
-                                        <span class="tag">
-
-                                            🎭
-                                            ${escapeHTML(
-                                                event.type
-                                            )}
-
-                                        </span>
-
-                                    `
-                                    : ""
-                            }
-
-
-                            ${
-                                event.address
-                                    ? `
-
-                                        <span class="tag">
-
-                                            📍
-                                            ${escapeHTML(
-                                                event.address
-                                            )}
-
-                                        </span>
-
-                                    `
-                                    : ""
-                            }
-
-                        </div>
-
-
-                        ${
-                            event.external_id
-                                ? `
-
-                                    <p>
-
-                                        <b>Внешний ID:</b>
-
-                                        ${escapeHTML(
-                                            event.external_id
-                                        )}
-
-                                    </p>
-
-                                `
-                                : ""
-                        }
-
-
-                        ${
-                            event.warning
-                                ? `
-
-                                    <p>
-
-                                        <span
-                                            class="tag tag-warning"
-                                        >
-
-                                            ⚠️ Предупреждение:
-
-                                            ${escapeHTML(
-                                                event.warning
-                                            )}
-
-                                        </span>
-
-                                    </p>
-
-                                `
-                                : ""
-                        }
-
-
-                        <div class="event-actions">
-
-                        </div>
-
-                    `;
-
-
-                    // =================================
-                    // КНОПКА ИЗМЕНИТЬ
-                    // =================================
-
-                    const editButton =
-                        document.createElement(
-                            "button"
-                        );
-
-
-                    editButton.textContent =
-                        "✏️ Изменить";
-
-
-                    editButton.onclick =
-                        () => editEvent(event);
-
-
-                    // =================================
-                    // КНОПКА УДАЛИТЬ
-                    // =================================
-
-                    const deleteButton =
-                        document.createElement(
-                            "button"
-                        );
-
-
-                    deleteButton.textContent =
-                        "🗑️ Удалить";
-
-
-                    deleteButton.className =
-                        "danger-button";
-
-
-                    deleteButton.onclick =
-                        () =>
-                            deleteEvent(
-                                event.id
+                        const div =
+                            document.createElement(
+                                "div"
                             );
 
 
-                    const actions =
-                        div.querySelector(
-                            ".event-actions"
+                        div.className =
+                            "event";
+
+
+                        const statusClass =
+                            getStatusClass(
+                                event.status
+                            );
+
+
+                        const age =
+                            event.age !== null &&
+                            event.age !== undefined &&
+                            event.age !== ""
+                                ? `${event.age}+`
+                                : "Не указано";
+
+
+                        div.innerHTML = `
+
+                            <h3>
+                                ${escapeHTML(
+                                    event.title ||
+                                    "Без названия"
+                                )}
+                            </h3>
+
+
+                            <p>
+
+                                <b>ID:</b>
+
+                                ${escapeHTML(
+                                    event.id
+                                )}
+
+                            </p>
+
+
+                            <p>
+
+                                <b>Статус:</b>
+
+                                <span
+                                    class="status ${statusClass}"
+                                >
+                                    ${escapeHTML(
+                                        event.status || ""
+                                    )}
+                                </span>
+
+                            </p>
+
+
+                            <p>
+
+                                <b>Описание:</b><br>
+
+                                ${escapeHTML(
+                                    event.description ||
+                                    "Не указано"
+                                )}
+
+                            </p>
+
+
+                            <p>
+
+                                <b>Дата начала:</b>
+
+                                ${formatDate(
+                                    event.start_date
+                                )}
+
+                            </p>
+
+
+                            <p>
+
+                                <b>Дата окончания:</b>
+
+                                ${formatDate(
+                                    event.end_date
+                                )}
+
+                            </p>
+
+
+                            <p>
+
+                                <b>Цена:</b>
+
+                                ${
+                                    event.price !== null &&
+                                    event.price !== undefined &&
+                                    event.price !== ""
+                                        ? escapeHTML(
+                                            event.price
+                                        ) + " ₽"
+                                        : "Не указана"
+                                }
+
+                            </p>
+
+
+                            ${
+                                event.image_url
+                                    ? `
+
+                                        <p>
+
+                                            <b>Изображение:</b>
+
+                                            <br>
+
+                                            <img
+                                                class="event-image"
+                                                src="${escapeHTML(event.image_url)}"
+                                                alt="Изображение мероприятия"
+                                                onerror="this.style.display='none'"
+                                            >
+
+                                            <br>
+
+                                            <span class="url">
+                                                ${escapeHTML(
+                                                    event.image_url
+                                                )}
+                                            </span>
+
+                                        </p>
+
+                                    `
+                                    : ""
+                            }
+
+
+                            <p>
+
+                                <b>Источник:</b>
+
+                                ${
+                                    event.source
+                                        ? escapeHTML(
+                                            event.source
+                                        )
+                                        : "Не указан"
+                                }
+
+                            </p>
+
+
+                            ${
+                                event.source_url
+                                    ? `
+
+                                        <p>
+
+                                            <b>
+                                                Ссылка на источник:
+                                            </b>
+
+                                            <br>
+
+                                            <a
+                                                href="${escapeHTML(event.source_url)}"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                ${escapeHTML(
+                                                    event.source_url
+                                                )}
+                                            </a>
+
+                                        </p>
+
+                                    `
+                                    : ""
+                            }
+
+
+                            <p>
+
+                                <b>Организатор:</b>
+
+                                ${
+                                    event.broadcaster
+                                        ? escapeHTML(
+                                            event.broadcaster
+                                        )
+                                        : "Не указан"
+                                }
+
+                            </p>
+
+
+                            ${
+                                event.broadcaster_url
+                                    ? `
+
+                                        <p>
+
+                                            <b>
+                                                Ссылка организатора:
+                                            </b>
+
+                                            <br>
+
+                                            <a
+                                                href="${escapeHTML(event.broadcaster_url)}"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                ${escapeHTML(
+                                                    event.broadcaster_url
+                                                )}
+                                            </a>
+
+                                        </p>
+
+                                    `
+                                    : ""
+                            }
+
+
+                            <div class="tags">
+
+                                <span class="tag tag-age">
+
+                                    🔞 Возраст:
+                                    ${escapeHTML(age)}
+
+                                </span>
+
+
+                                ${
+                                    event.type
+                                        ? `
+
+                                            <span class="tag">
+
+                                                🎭
+                                                ${escapeHTML(
+                                                    event.type
+                                                )}
+
+                                            </span>
+
+                                        `
+                                        : ""
+                                }
+
+
+                                ${
+                                    event.address
+                                        ? `
+
+                                            <span class="tag">
+
+                                                📍
+                                                ${escapeHTML(
+                                                    event.address
+                                                )}
+
+                                            </span>
+
+                                        `
+                                        : ""
+                                }
+
+                            </div>
+
+
+                            ${
+                                event.external_id
+                                    ? `
+
+                                        <p>
+
+                                            <b>
+                                                Внешний ID:
+                                            </b>
+
+                                            ${escapeHTML(
+                                                event.external_id
+                                            )}
+
+                                        </p>
+
+                                    `
+                                    : ""
+                            }
+
+
+                            ${
+                                event.warning
+                                    ? `
+
+                                        <p>
+
+                                            <span
+                                                class="tag tag-warning"
+                                            >
+
+                                                ⚠️ Предупреждение:
+
+                                                ${escapeHTML(
+                                                    event.warning
+                                                )}
+
+                                            </span>
+
+                                        </p>
+
+                                    `
+                                    : ""
+                            }
+
+
+                            ${
+                                event.source2 ||
+                                event.source2_url
+                                    ? `
+
+                                        <div class="source-block">
+
+                                            <b>
+                                                🔗 Дополнительный источник
+                                            </b>
+
+                                            ${
+                                                event.source2
+                                                    ? `
+
+                                                        <p>
+
+                                                            <b>
+                                                                Название:
+                                                            </b>
+
+                                                            ${escapeHTML(
+                                                                event.source2
+                                                            )}
+
+                                                        </p>
+
+                                                    `
+                                                    : ""
+                                            }
+
+
+                                            ${
+                                                event.source2_url
+                                                    ? `
+
+                                                        <p>
+
+                                                            <b>
+                                                                Ссылка:
+                                                            </b>
+
+                                                            <br>
+
+                                                            <a
+                                                                href="${escapeHTML(event.source2_url)}"
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                            >
+                                                                ${escapeHTML(
+                                                                    event.source2_url
+                                                                )}
+                                                            </a>
+
+                                                        </p>
+
+                                                    `
+                                                    : ""
+                                            }
+
+                                        </div>
+
+                                    `
+                                    : ""
+                            }
+
+
+                            <div class="event-actions">
+
+                            </div>
+
+                        `;
+
+
+                        // =================================
+                        // КНОПКА ИЗМЕНИТЬ
+                        // =================================
+
+                        const editButton =
+                            document.createElement(
+                                "button"
+                            );
+
+
+                        editButton.textContent =
+                            "✏️ Изменить";
+
+
+                        editButton.onclick =
+                            () => editEvent(event);
+
+
+
+                        // =================================
+                        // КНОПКА УДАЛИТЬ
+                        // =================================
+
+                        const deleteButton =
+                            document.createElement(
+                                "button"
+                            );
+
+
+                        deleteButton.textContent =
+                            "🗑️ Удалить";
+
+
+                        deleteButton.className =
+                            "danger-button";
+
+
+                        deleteButton.onclick =
+                            () =>
+                                deleteEvent(
+                                    event.id
+                                );
+
+
+                        const actions =
+                            div.querySelector(
+                                ".event-actions"
+                            );
+
+
+                        actions.appendChild(
+                            editButton
                         );
 
 
-                    actions.appendChild(
-                        editButton
-                    );
-
-                    actions.appendChild(
-                        deleteButton
-                    );
+                        actions.appendChild(
+                            deleteButton
+                        );
 
 
-                    eventsBlock.appendChild(
-                        div
-                    );
+                        eventsBlock.appendChild(
+                            div
+                        );
 
-                });
+                    }
+                );
 
             }
 
             catch (error) {
+
+                console.error(
+                    "Ошибка загрузки мероприятий:",
+                    error
+                );
+
 
                 eventsBlock.innerHTML = `
 
                     <div class="error">
 
                         Ошибка соединения с backend:
+
+                        <br><br>
 
                         ${escapeHTML(
                             error.message
@@ -1450,6 +1647,41 @@
                     </div>
 
                 `;
+
+            }
+
+        }
+
+
+
+        // =========================================
+        // ЧТЕНИЕ JSON
+        // =========================================
+
+        async function readJSON(response) {
+
+            const text =
+                await response.text();
+
+
+            if (!text) {
+
+                return {};
+
+            }
+
+
+            try {
+
+                return JSON.parse(text);
+
+            }
+
+            catch {
+
+                return {
+                    error: text
+                };
 
             }
 
@@ -1675,15 +1907,15 @@
 
 
             document
-                .getElementById("eventSourceUrl")
-                .value =
-                event.source_url ?? "";
-
-
-            document
                 .getElementById("eventSource")
                 .value =
                 event.source ?? "";
+
+
+            document
+                .getElementById("eventSourceUrl")
+                .value =
+                event.source_url ?? "";
 
 
             document
@@ -1726,6 +1958,20 @@
                 .getElementById("eventWarning")
                 .value =
                 event.warning ?? "";
+
+
+            // Второй источник
+
+            document
+                .getElementById("eventSource2")
+                .value =
+                event.source2 ?? "";
+
+
+            document
+                .getElementById("eventSource2Url")
+                .value =
+                event.source2_url ?? "";
 
 
             document
@@ -1863,12 +2109,12 @@
 
 
             document
-                .getElementById("eventSourceUrl")
+                .getElementById("eventSource")
                 .value = "";
 
 
             document
-                .getElementById("eventSource")
+                .getElementById("eventSourceUrl")
                 .value = "";
 
 
@@ -1907,6 +2153,16 @@
                 .value = "";
 
 
+            document
+                .getElementById("eventSource2")
+                .value = "";
+
+
+            document
+                .getElementById("eventSource2Url")
+                .value = "";
+
+
             const result =
                 document
                     .getElementById("formResult");
@@ -1928,13 +2184,41 @@
             .getElementById("saveEvent")
             .onclick = async () => {
 
+                const title =
+                    document
+                        .getElementById("eventTitle")
+                        .value
+                        .trim();
+
+
+                const result =
+                    document
+                        .getElementById("formResult");
+
+
+                if (!title) {
+
+                    result.textContent =
+                        "Введите название мероприятия.";
+
+                    result.className =
+                        "error";
+
+                    return;
+
+                }
+
+
+                /*
+                 * ВАЖНО:
+                 * id сюда намеренно НЕ добавляется.
+                 * Supabase генерирует id автоматически.
+                 */
+
                 const eventData = {
 
                     title:
-                        document
-                            .getElementById("eventTitle")
-                            .value
-                            .trim(),
+                        title,
 
                     status:
                         document
@@ -1945,7 +2229,8 @@
                         document
                             .getElementById("eventDescription")
                             .value
-                            .trim(),
+                            .trim() ||
+                        null,
 
                     start_date:
                         getDateValue(
@@ -1961,7 +2246,8 @@
                         document
                             .getElementById("eventImage")
                             .value
-                            .trim(),
+                            .trim() ||
+                        null,
 
                     price:
                         getNumberValue(
@@ -1972,25 +2258,29 @@
                         document
                             .getElementById("eventSourceUrl")
                             .value
-                            .trim(),
+                            .trim() ||
+                        null,
 
                     broadcaster:
                         document
                             .getElementById("eventBroadcaster")
                             .value
-                            .trim(),
+                            .trim() ||
+                        null,
 
                     source:
                         document
                             .getElementById("eventSource")
                             .value
-                            .trim(),
+                            .trim() ||
+                        null,
 
                     broadcaster_url:
                         document
                             .getElementById("eventBroadcasterUrl")
                             .value
-                            .trim(),
+                            .trim() ||
+                        null,
 
                     age:
                         getNumberValue(
@@ -2001,39 +2291,51 @@
                         document
                             .getElementById("eventType")
                             .value
-                            .trim(),
+                            .trim() ||
+                        null,
 
                     address:
                         document
                             .getElementById("eventAddress")
                             .value
-                            .trim(),
+                            .trim() ||
+                        null,
 
                     external_id:
                         document
                             .getElementById("eventExternalId")
                             .value
-                            .trim(),
+                            .trim() ||
+                        null,
 
                     warning:
                         document
                             .getElementById("eventWarning")
                             .value
-                            .trim()
+                            .trim() ||
+                        null,
+
+                    source2:
+                        document
+                            .getElementById("eventSource2")
+                            .value
+                            .trim() ||
+                        null,
+
+                    source2_url:
+                        document
+                            .getElementById("eventSource2Url")
+                            .value
+                            .trim() ||
+                        null
 
                 };
-
-
-                const result =
-                    document
-                        .getElementById("formResult");
 
 
                 result.textContent =
                     "Сохранение...";
 
                 result.className = "";
-
 
 
                 try {
@@ -2079,14 +2381,16 @@
 
 
                         const data =
-                            await response.json();
+                            await readJSON(
+                                response
+                            );
 
 
                         if (!response.ok) {
 
                             throw new Error(
-                                data.error ||
-                                "Ошибка создания"
+                                data?.error ||
+                                `HTTP ${response.status}`
                             );
 
                         }
@@ -2112,7 +2416,9 @@
 
                                 API_URL +
                                 "/api/events/" +
-                                editingEventId,
+                                encodeURIComponent(
+                                    editingEventId
+                                ),
 
                                 {
 
@@ -2140,14 +2446,16 @@
 
 
                         const data =
-                            await response.json();
+                            await readJSON(
+                                response
+                            );
 
 
                         if (!response.ok) {
 
                             throw new Error(
-                                data.error ||
-                                "Ошибка изменения"
+                                data?.error ||
+                                `HTTP ${response.status}`
                             );
 
                         }
@@ -2169,7 +2477,9 @@
                         () => {
 
                             document
-                                .getElementById("eventForm")
+                                .getElementById(
+                                    "eventForm"
+                                )
                                 .classList
                                 .add("hidden");
 
@@ -2183,6 +2493,12 @@
                 }
 
                 catch (error) {
+
+                    console.error(
+                        "Ошибка сохранения:",
+                        error
+                    );
+
 
                     result.textContent =
                         "Ошибка: " +
@@ -2216,9 +2532,22 @@
             }
 
 
-            return new Date(
-                value
-            ).toISOString();
+            const date =
+                new Date(value);
+
+
+            if (
+                isNaN(
+                    date.getTime()
+                )
+            ) {
+
+                return null;
+
+            }
+
+
+            return date.toISOString();
 
         }
 
@@ -2233,7 +2562,8 @@
             const value =
                 document
                     .getElementById(id)
-                    .value;
+                    .value
+                    .trim();
 
 
             if (value === "") {
@@ -2308,7 +2638,7 @@
 
                         API_URL +
                         "/api/events/" +
-                        id,
+                        encodeURIComponent(id),
 
                         {
 
@@ -2328,14 +2658,16 @@
 
 
                 const data =
-                    await response.json();
+                    await readJSON(
+                        response
+                    );
 
 
                 if (!response.ok) {
 
                     throw new Error(
-                        data.error ||
-                        "Ошибка удаления"
+                        data?.error ||
+                        `HTTP ${response.status}`
                     );
 
                 }
@@ -2346,6 +2678,12 @@
             }
 
             catch (error) {
+
+                console.error(
+                    "Ошибка удаления:",
+                    error
+                );
+
 
                 alert(
                     "Ошибка: " +
